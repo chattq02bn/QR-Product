@@ -11,7 +11,7 @@ các ảnh hướng dẫn của sản phẩm đó.
 - Header quản trị (nền navy, vạch nhấn đỏ) gồm link "Xem trang công khai" và nút "Đăng xuất".
 - **Bắt buộc đăng nhập** bằng tài khoản admin (tạo từ seed) mới xem được bảng dữ liệu.
 - Thêm / sửa / xóa sản phẩm, tìm kiếm theo tên, phân trang; cột "Hạn QR" hiển thị trạng thái
-  (Vĩnh viễn / ngày hết hạn / Còn X giờ / Đã hết hạn).
+  (Vĩnh viễn / Còn X phút / Còn X giờ Y phút / dd/mm/yyyy HH:mm / Đã hết hạn).
 - **Bắt buộc tối thiểu 1 ảnh hướng dẫn** khi tạo/sửa (form disable nút Lưu, API trả 400 nếu thiếu ảnh).
 - Upload ảnh hướng dẫn lên Cloudinary (chỉ server giữ API secret), xem trước, xóa, kéo thả đổi thứ tự ảnh.
 - **Chèn link ảnh có sẵn**: dán nhiều link (mỗi dòng một link) vào form, kiểm tra URL hợp lệ,

@@ -75,19 +75,16 @@ const UNIT_LABEL: Record<ExpiryUnit, string> = {
 /** Chọn đơn vị + số liệu sao cho giá trị dễ đọc (1 phút, 2 giờ, 3 ngày...). */
 function splitDuration(ms: number): { duration: number; unit: ExpiryUnit } {
   const safe = Math.max(ms, UNIT_MS.minute);
-  if (safe % UNIT_MS.day === 0 && safe >= UNIT_MS.day) {
+  if (safe < UNIT_MS.day) {
+    return { duration: Math.max(1, Math.round(safe / UNIT_MS.minute)), unit: 'minute' };
+  }
+  if (safe % UNIT_MS.day === 0) {
     return { duration: safe / UNIT_MS.day, unit: 'day' };
   }
-  if (safe % UNIT_MS.hour === 0 && safe >= UNIT_MS.hour) {
+  if (safe % UNIT_MS.hour === 0) {
     return { duration: safe / UNIT_MS.hour, unit: 'hour' };
   }
-  if (safe >= UNIT_MS.day) {
-    return { duration: Math.round((safe / UNIT_MS.day) * 10) / 10, unit: 'day' };
-  }
-  if (safe >= UNIT_MS.hour) {
-    return { duration: Math.round((safe / UNIT_MS.hour) * 10) / 10, unit: 'hour' };
-  }
-  return { duration: Math.max(1, Math.round(safe / UNIT_MS.minute)), unit: 'minute' };
+  return { duration: Math.round((safe / UNIT_MS.day) * 10) / 10, unit: 'day' };
 }
 
 function toImageItems(product: ProductView): ImageItem[] {
@@ -108,7 +105,9 @@ function countWords(value?: string): number {
 
 function formatDateTime(date: Date): string {
   const pad = (n: number) => String(n).padStart(2, '0');
-  return `${pad(date.getHours())}:${pad(date.getMinutes())} ${pad(date.getDate())}/${pad(date.getMonth() + 1)}/${date.getFullYear()}`;
+  return `${pad(date.getDate())}/${pad(date.getMonth() + 1)}/${date.getFullYear()} ${pad(date.getHours())}:${pad(
+    date.getMinutes(),
+  )}`;
 }
 
 export default function ProductModal({ open, product, onClose, onSave }: Props) {

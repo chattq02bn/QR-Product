@@ -209,7 +209,7 @@ export default function ProductTable({
     {
       title: 'Hạn QR',
       key: 'expiry',
-      width: 130,
+      width: 170,
       render: (_, product) => <ExpiryTag product={product} />,
     },
     {
