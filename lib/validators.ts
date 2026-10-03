@@ -110,5 +110,18 @@ export const qrQuerySchema = z.object({
   download: z.union([z.literal('1'), z.literal('true')]).optional(),
 });
 
+/** Body của API nén mã QR: tải tất cả hoặc tải theo danh sách id sản phẩm. */
+export const qrExportSchema = z
+  .object({
+    all: z.boolean().optional().default(false),
+    ids: z.array(z.string().min(1)).max(5000).optional().default([]),
+    size: z.coerce.number().int().min(128).max(2048).optional(),
+  })
+  .refine((value) => value.all || value.ids.length > 0, {
+    message: 'Chọn ít nhất một sản phẩm để tải mã QR',
+  });
+
+export type QrExportInput = z.infer<typeof qrExportSchema>;
+
 export type CreateProductInput = z.infer<typeof createProductSchema>;
 export type UpdateProductInput = z.infer<typeof updateProductSchema>;

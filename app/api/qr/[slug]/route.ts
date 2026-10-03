@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import QRCode from 'qrcode';
 import { fail, handleApiError } from '@/lib/api';
-import { getLookupUrl } from '@/lib/qr';
+import { renderQrPng } from '@/lib/qr-png';
 import { qrQuerySchema } from '@/lib/validators';
 import { prisma } from '@/lib/prisma';
 
@@ -29,13 +28,7 @@ export async function GET(req: NextRequest, { params }: { params: { slug: string
     if (!product) return fail('Không tìm thấy sản phẩm', 404);
 
     const size = query.size ?? 512;
-    const buffer = await QRCode.toBuffer(getLookupUrl(slug), {
-      type: 'png',
-      width: size,
-      margin: 1,
-      errorCorrectionLevel: 'M',
-      color: { dark: '#10357a', light: '#ffffff' },
-    });
+    const buffer = await renderQrPng(slug, size);
 
     const headers = new Headers({
       'Content-Type': 'image/png',

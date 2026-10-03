@@ -1,6 +1,6 @@
 'use client';
 
-import type { CSSProperties } from 'react';
+import type { CSSProperties, Key } from 'react';
 import { useEffect, useRef, useState } from 'react';
 import {
   Button,
@@ -36,6 +36,8 @@ type Props = {
   pageSize: number;
   asCards: boolean;
   deletingId: string | null;
+  selectedKeys: Key[];
+  onSelectionChange: (keys: Key[]) => void;
   onPageChange: (page: number, pageSize: number) => void;
   onView: (product: ProductView) => void;
   onQr: (product: ProductView) => void;
@@ -155,6 +157,8 @@ export default function ProductTable({
   pageSize,
   asCards,
   deletingId,
+  selectedKeys,
+  onSelectionChange,
   onPageChange,
   onView,
   onQr,
@@ -355,7 +359,13 @@ export default function ProductTable({
       loading={loading}
       pagination={pagination}
       tableLayout="fixed"
-      scroll={{ x: 1060 }}
+      rowSelection={{
+        selectedRowKeys: selectedKeys,
+        onChange: (keys) => onSelectionChange(keys as Key[]),
+        preserveSelectedRowKeys: true,
+        columnWidth: 48,
+      }}
+      scroll={{ x: 1108 }}
     />
   );
 }

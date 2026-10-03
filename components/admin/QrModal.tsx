@@ -1,10 +1,12 @@
 'use client';
 
+import { useState } from 'react';
 import { App, Button, Modal, QRCode, Space, Typography } from 'antd';
 import { CopyOutlined, DownloadOutlined, LinkOutlined, PrinterOutlined } from '@ant-design/icons';
 import { copyText, openInNewTab } from '@/lib/client';
 import { getLookupPath, getLookupUrl } from '@/lib/qr';
 import { printQr } from '@/lib/print';
+import { saveImageToDevice } from '@/lib/save-image';
 
 export type QrTarget = { name: string; slug: string } | null;
 
@@ -15,6 +17,7 @@ type Props = {
 
 export default function QrModal({ target, onClose }: Props) {
   const { message } = App.useApp();
+  const [saving, setSaving] = useState(false);
   const link = target ? getLookupUrl(target.slug) : '';
 
   const handleCopy = async () => {
@@ -31,6 +34,27 @@ export default function QrModal({ target, onClose }: Props) {
     const opened = printQr({ name: target.name, slug: target.slug });
     if (!opened) {
       message.warning('Trình duyệt đã chặn cửa sổ in, vui lòng cho phép popup');
+    }
+  };
+
+  /** Tải PNG: iPhone/iPad lưu thẳng vào thư viện ảnh qua bảng chọn, Android tải về máy. */
+  const handleDownloadPng = async () => {
+    if (!target || saving) return;
+    const url = `/api/qr/${encodeURIComponent(target.slug)}?download=1`;
+    const filename = `ma-qr-${target.slug}.png`;
+
+    setSaving(true);
+    try {
+      const result = await saveImageToDevice(url, filename);
+      if (result === 'shared') {
+        message.success('Chọn "Lưu ảnh" trong bảng chọn để đưa mã QR vào thư viện ảnh');
+      } else if (result === 'downloaded') {
+        message.success('Đã lưu PNG vào máy');
+      }
+    } catch {
+      message.error('Không tải được ảnh QR, vui lòng thử lại');
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -93,9 +117,8 @@ export default function QrModal({ target, onClose }: Props) {
               <Button
                 type="primary"
                 icon={<DownloadOutlined />}
-                onClick={() =>
-                  openInNewTab(`/api/qr/${encodeURIComponent(target.slug)}?download=1`)
-                }
+                loading={saving}
+                onClick={() => void handleDownloadPng()}
               >
                 Tải PNG
               </Button>

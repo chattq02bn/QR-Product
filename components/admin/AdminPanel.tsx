@@ -1,11 +1,13 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import type { Key } from 'react';
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Alert, App, Button, Grid, Input, Space, Typography } from 'antd';
-import { PlusOutlined, ReloadOutlined, SearchOutlined } from '@ant-design/icons';
+import { Alert, App, Button, Dropdown, Grid, Space, Typography } from 'antd';
+import { DownOutlined, DownloadOutlined, PlusOutlined, ReloadOutlined } from '@ant-design/icons';
 import ProductTable from '@/components/admin/ProductTable';
 import ProductModal from '@/components/admin/ProductModal';
+import ProductSearch from '@/components/admin/ProductSearch';
 import QrModal from '@/components/admin/QrModal';
 import AdminHeader from '@/components/admin/AdminHeader';
 import type { QrTarget } from '@/components/admin/QrModal';
@@ -32,20 +34,19 @@ export default function AdminPanel() {
 
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
-  const [searchInput, setSearchInput] = useState('');
   const [search, setSearch] = useState('');
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<ProductView | null>(null);
   const [qrTarget, setQrTarget] = useState<QrTarget>(null);
+  const [selectedKeys, setSelectedKeys] = useState<Key[]>([]);
+  const [exporting, setExporting] = useState<'all' | 'selected' | null>(null);
   const scrollTopOnLoadRef = useRef(false);
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setSearch(searchInput.trim());
-      setPage(1);
-    }, 400);
-    return () => clearTimeout(timer);
-  }, [searchInput]);
+  /** Nhận kết quả tìm kiếm từ ProductSearch (đã debounce trong component con). */
+  const handleSearch = useCallback((term: string) => {
+    setSearch(term);
+    setPage(1);
+  }, []);
 
   const params: ProductListParams = { page, pageSize, search };
 
@@ -102,6 +103,7 @@ export default function AdminPanel() {
     mutationFn: (product: ProductView) => deleteProduct(product.id),
     onSuccess: (_data, product) => {
       removeDeletedProduct(queryClient, product.id);
+      setSelectedKeys((keys) => keys.filter((key) => key !== product.id));
       message.success(`Đã xóa "${product.name}"`);
       if (items.length === 1 && page > 1) {
         setPage(page - 1);
@@ -132,6 +134,83 @@ export default function AdminPanel() {
   };
 
   const deletingId = deleteMutation.isPending ? (deleteMutation.variables?.id ?? null) : null;
+  const selectedCount = selectedKeys.length;
+
+  const readFilename = (header: string | null): string | null => {
+    if (!header) return null;
+    const match = /filename="([^"]+)"/.exec(header);
+    return match?.[1] ?? null;
+  };
+
+  const downloadQrArchive = async (mode: 'all' | 'selected') => {
+    if (exporting) return;
+    if (mode === 'selected' && selectedCount === 0) {
+      message.info('Hãy chọn ít nhất một sản phẩm');
+      return;
+    }
+
+    setExporting(mode);
+    const hideLoading = message.loading(
+      mode === 'all'
+        ? `Đang tạo file .rar cho ${total} sản phẩm, vui lòng chờ...`
+        : `Đang tạo file .rar cho ${selectedCount} sản phẩm đã chọn...`,
+      0,
+    );
+    try {
+      const payload = mode === 'all' ? { all: true } : { ids: selectedKeys.map(String) };
+      const res = await fetch('/api/qr/export', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      if (!res.ok) {
+        const data = (await res.json().catch(() => null)) as { error?: { message?: string } } | null;
+        message.error(data?.error?.message ?? 'Không tạo được file mã QR, vui lòng thử lại');
+        return;
+      }
+
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement('a');
+      anchor.href = url;
+      anchor.download = readFilename(res.headers.get('Content-Disposition')) ?? 'ma-qr.rar';
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      URL.revokeObjectURL(url);
+
+      message.success(
+        mode === 'all'
+          ? `Đã tải mã QR của ${total} sản phẩm`
+          : `Đã tải mã QR của ${selectedCount} sản phẩm đã chọn`,
+      );
+    } catch {
+      message.error('Không tải được file mã QR, vui lòng thử lại');
+    } finally {
+      hideLoading();
+      setExporting(null);
+    }
+  };
+
+  const downloadMenu = {
+    items: [
+      {
+        key: 'all',
+        icon: <DownloadOutlined />,
+        label: `Tải tất cả (${total})`,
+      },
+      {
+        key: 'selected',
+        icon: <DownloadOutlined />,
+        label: `Tải những QR đã chọn (${selectedCount})`,
+        disabled: selectedCount === 0,
+      },
+    ],
+    onClick: ({ key }: { key: string }) => {
+      void downloadQrArchive(key as 'all' | 'selected');
+    },
+  };
 
   return (
     <>
@@ -142,18 +221,23 @@ export default function AdminPanel() {
             Quản lý tra cứu sản phẩm
           </Typography.Title>
           <Space wrap>
-            <Input
-              allowClear
-              prefix={<SearchOutlined />}
-              placeholder="Tìm theo tên sản phẩm"
-              value={searchInput}
-              onChange={(event) => setSearchInput(event.target.value)}
-              style={{ width: 260 }}
-              aria-label="Tìm theo tên sản phẩm"
-            />
+            <ProductSearch onSearch={handleSearch} />
             <Button icon={<ReloadOutlined />} onClick={refresh} loading={loading}>
               Tải lại
             </Button>
+            <Dropdown trigger={['click']} menu={downloadMenu}>
+              <Button
+                icon={<DownloadOutlined />}
+                loading={exporting !== null}
+                title={
+                  selectedCount === 0
+                    ? 'Tải mã QR của tất cả sản phẩm (.rar)'
+                    : 'Tải mã QR (.rar): tất cả hoặc sản phẩm đã chọn'
+                }
+              >
+                Tải mã QR <DownOutlined />
+              </Button>
+            </Dropdown>
             <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>
               Thêm sản phẩm
             </Button>
@@ -182,6 +266,8 @@ export default function AdminPanel() {
           pageSize={pageSize}
           asCards={asCards}
           deletingId={deletingId}
+          selectedKeys={selectedKeys}
+          onSelectionChange={setSelectedKeys}
           onPageChange={(nextPage, nextPageSize) => {
             scrollTopOnLoadRef.current = true;
             setPage(nextPage);
