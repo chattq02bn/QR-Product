@@ -10,6 +10,13 @@ export class ApiError extends Error {
 
 type ApiEnvelope<T> = { data?: T; error?: { message?: string } };
 
+/** Thông báo mặc định theo mã trạng thái khi server không trả body JSON. */
+const STATUS_MESSAGES: Record<number, string> = {
+  401: 'Phiên đăng nhập không hợp lệ, vui lòng đăng nhập lại',
+  413: 'Ảnh/file quá lớn so với giới hạn của máy chủ, vui lòng chọn ảnh nhỏ hơn',
+  500: 'Máy chủ đang gặp sự cố, vui lòng thử lại',
+};
+
 /** Gọi API phía client, ném ApiError với thông báo tiếng Việt khi thất bại. */
 export async function apiFetch<T>(url: string, init: RequestInit = {}): Promise<T> {
   const headers = new Headers(init.headers);
@@ -34,7 +41,9 @@ export async function apiFetch<T>(url: string, init: RequestInit = {}): Promise<
 
   if (!response.ok || !payload || payload.error) {
     throw new ApiError(
-      payload?.error?.message ?? `Đã có lỗi xảy ra (${response.status})`,
+      payload?.error?.message ??
+        STATUS_MESSAGES[response.status] ??
+        `Đã có lỗi xảy ra (${response.status})`,
       response.status,
     );
   }

@@ -1,5 +1,6 @@
 import type { QueryClient } from '@tanstack/react-query';
 import { apiFetch } from '@/lib/client';
+import { compressImageForUpload } from '@/lib/image-compress';
 import type { ProductListData, ProductView, UploadedImage } from '@/lib/types';
 
 export type ProductListParams = { page: number; pageSize: number; search: string };
@@ -40,8 +41,9 @@ export async function deleteProduct(id: string): Promise<{ id: string }> {
 }
 
 export async function uploadProductImage(file: File): Promise<UploadedImage> {
+  const uploadFile = await compressImageForUpload(file);
   const body = new FormData();
-  body.append('files', file, file.name);
+  body.append('files', uploadFile, uploadFile.name);
   const uploaded = await apiFetch<UploadedImage[]>('/api/upload', {
     method: 'POST',
     body,
