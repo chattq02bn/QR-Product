@@ -193,14 +193,13 @@ Response luôn theo cấu trúc `{ data }` hoặc `{ error: { message } }` kèm 
 
 ## Deploy (Vercel + Neon)
 
-1. **Postgres (Neon)**: tạo project trên [Neon](https://neon.tech) → copy 2 connection string trong tab
-   _Pooled_ và _Direct_.
+1. **Postgres (Neon)**: tạo project trên [Neon](https://neon.tech) → copy `DATABASE_URL`
+   (connection string _Pooled_ cho app, hoặc _Direct_ nếu chạy migrate qua pooler gặp lỗi).
 2. **Cloudinary**: copy 3 khóa vào biến môi trường của Vercel.
 3. Push repo lên GitHub → import vào Vercel.
 4. Trong _Project Settings → Environment Variables_, thêm:
 
-   - `DATABASE_URL` (Neon – _Pooled_)
-   - `DIRECT_DATABASE_URL` (Neon – _Direct_, dùng cho `prisma migrate`)
+   - `DATABASE_URL`
    - `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET`, `CLOUDINARY_FOLDER`
    - `NEXT_PUBLIC_APP_URL=https://ten-domain-cua-ban`
    - `ADMIN_PASSWORD` (khuyến nghị)
