@@ -296,6 +296,8 @@ export default function ProductModal({ open, product, onClose, onSave }: Props) 
     const preview = URL.createObjectURL(rcFile);
     rememberBlob(preview);
     setLocalProductImage({ file: rcFile, preview });
+    // Đã tải ảnh sản phẩm -> bỏ link cũ trong ô "Ảnh sản phẩm"
+    form.setFieldsValue({ imageUrl: '' });
     onOk?.({});
   };
 

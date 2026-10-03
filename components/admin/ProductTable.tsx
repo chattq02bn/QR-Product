@@ -1,7 +1,7 @@
 'use client';
 
 import type { CSSProperties, Key } from 'react';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Button,
   Card,
@@ -10,6 +10,7 @@ import {
   Popconfirm,
   QRCode,
   Space,
+  Spin,
   Table,
   Tag,
   Typography,
@@ -58,22 +59,33 @@ const GUIDE_GAP = 6;
 
 function GuideImageSlider({ product }: { product: ProductView }) {
   const images = product.images;
-  const [start, setStart] = useState(0);
   const viewportRef = useRef<HTMLDivElement | null>(null);
   const [viewportWidth, setViewportWidth] = useState(GUIDE_COLUMN_WIDTH);
+  const [atStart, setAtStart] = useState(true);
+  const [atEnd, setAtEnd] = useState(false);
+
+  const updateEdges = useCallback(() => {
+    const element = viewportRef.current;
+    if (!element) return;
+    setAtStart(element.scrollLeft <= 1);
+    setAtEnd(element.scrollLeft + element.clientWidth >= element.scrollWidth - 1);
+  }, []);
 
   useEffect(() => {
     const element = viewportRef.current;
     if (!element) return undefined;
 
-    const update = () => setViewportWidth(element.clientWidth);
+    const update = () => {
+      setViewportWidth(element.clientWidth);
+      updateEdges();
+    };
     update();
 
     if (typeof ResizeObserver === 'undefined') return undefined;
     const observer = new ResizeObserver(update);
     observer.observe(element);
     return () => observer.disconnect();
-  }, []);
+  }, [updateEdges]);
 
   if (images.length === 0) {
     return <Tag color="default">Chưa có ảnh</Tag>;
@@ -82,18 +94,17 @@ function GuideImageSlider({ product }: { product: ProductView }) {
   const baseWidth = viewportWidth > 0 ? viewportWidth : GUIDE_COLUMN_WIDTH;
   const cellWidth = (baseWidth - GUIDE_GAP * (GUIDE_VISIBLE_COUNT - 1)) / GUIDE_VISIBLE_COUNT;
   const step = cellWidth + GUIDE_GAP;
-  const maxStart = Math.max(images.length - GUIDE_VISIBLE_COUNT, 0);
-  const safeStart = Math.min(start, maxStart);
-  const canPrev = safeStart > 0;
-  const canNext = safeStart < maxStart;
+  const canPrev = !atStart;
+  const canNext = !atEnd;
+
+  const scrollByStep = (direction: 1 | -1) => {
+    viewportRef.current?.scrollBy({ left: direction * step, behavior: 'smooth' });
+  };
 
   return (
     <div className="admin-img-slider">
-      <div className="admin-img-slider__viewport" ref={viewportRef}>
-        <div
-          className="admin-img-slider__track"
-          style={{ transform: `translateX(-${safeStart * step}px)` }}
-        >
+      <div className="admin-img-slider__viewport" ref={viewportRef} onScroll={updateEdges}>
+        <div className="admin-img-slider__track">
           {images.map((image) => (
             <span key={image.id} className="admin-img-slider__cell" style={{ width: cellWidth }}>
               <Image src={image.url} alt={`${product.name} - hướng dẫn`} />
@@ -108,7 +119,7 @@ function GuideImageSlider({ product }: { product: ProductView }) {
           className="admin-img-slider__btn admin-img-slider__btn--prev"
           aria-label="Ảnh trước"
           title="Ảnh trước"
-          onClick={() => setStart(Math.max(safeStart - 1, 0))}
+          onClick={() => scrollByStep(-1)}
         >
           <LeftOutlined />
         </button>
@@ -120,7 +131,7 @@ function GuideImageSlider({ product }: { product: ProductView }) {
           className="admin-img-slider__btn admin-img-slider__btn--next"
           aria-label="Ảnh kế tiếp"
           title="Ảnh kế tiếp"
-          onClick={() => setStart(Math.min(safeStart + 1, maxStart))}
+          onClick={() => scrollByStep(1)}
         >
           <RightOutlined />
         </button>
@@ -264,7 +275,12 @@ export default function ProductTable({
 
   if (asCards) {
     return (
-      <div className="admin-card-list">
+      <div className={`admin-card-list${loading ? ' admin-card-list--loading' : ''}`}>
+        {loading && (
+          <div className="admin-card-list__loading" role="status" aria-label="Đang tải dữ liệu">
+            <Spin size="large" />
+          </div>
+        )}
         {items.map((product) => (
           <Card
             key={product.id}
