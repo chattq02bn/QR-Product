@@ -51,6 +51,24 @@ a {
   letter-spacing: 0.2px;
 }
 
+header.public-header .public-header__scan {
+  margin-left: auto;
+  flex: none;
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.75);
+}
+
+header.public-header .public-header__scan:hover,
+header.public-header .public-header__scan:focus-visible {
+  color: #fff;
+  border-color: #fff;
+  background: rgba(255, 255, 255, 0.14);
+}
+
+header.public-header .public-header__scan .ant-btn-icon {
+  color: #fff;
+}
+
 .public-main {
   width: 100%;
   max-width: 900px;

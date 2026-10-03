@@ -27,15 +27,5 @@ export default async function HomePage({ searchParams }: PageProps) {
     }
   }
 
-  return (
-    <>
-      <header className="public-header">
-        <span className="public-header__accent" aria-hidden="true" />
-        <h1 className="public-header__title">Tra cứu sản phẩm</h1>
-      </header>
-      <main className="public-main">
-        <PublicContent code={code} product={product} loadError={loadError} />
-      </main>
-    </>
-  );
+  return <PublicContent code={code} product={product} loadError={loadError} />;
 }

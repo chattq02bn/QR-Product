@@ -190,7 +190,22 @@ export default function PublicContent({ code, product, loadError }: Props) {
 
   return (
     <>
-      {content}
+      <header className="public-header">
+        <span className="public-header__accent" aria-hidden="true" />
+        <h1 className="public-header__title">Tra cứu sản phẩm</h1>
+        <Button
+          type="primary"
+          ghost
+          size="small"
+          icon={<QrcodeOutlined />}
+          className="public-header__scan"
+          onClick={openScanner}
+        >
+          Quét QR
+        </Button>
+      </header>
+
+      <main className="public-main">{content}</main>
 
       <input ref={fileInputRef} type="file" accept="image/*" hidden onChange={handleFileChange} />
 
