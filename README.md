@@ -207,7 +207,9 @@ Response luôn theo cấu trúc `{ data }` hoặc `{ error: { message } }` kèm 
    - `SESSION_SECRET` (khuyến nghị – secret ký cookie phiên đăng nhập)
 
 5. Build Command đã cấu hình sẵn trong `vercel.json`
-   (`prisma generate` → `prisma migrate deploy` → `next build`), không cần đổi trong dashboard.
+   (`prisma generate` → `prisma migrate deploy` → `prisma db seed` → `next build`),
+   không cần đổi trong dashboard – **seed tự chạy mỗi lần deploy** (idempotent: chỉ tạo tài khoản
+   admin/sản phẩm khi chưa có).
 
 6. Seed dữ liệu cho production: chạy `npm run prisma:seed` với `DATABASE_URL` trỏ vào Neon
    (bắt buộc nếu muốn đăng nhập `/admin` – seed tạo tài khoản admin `Admin` / `Admin@123`).

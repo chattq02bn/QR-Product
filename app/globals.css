@@ -105,13 +105,20 @@ a {
   min-width: 0;
 }
 
+.product-info__name {
+  margin: 0 0 6px;
+  font-size: 17px;
+  line-height: 1.4;
+  font-weight: 700;
+  color: #10357a;
+}
+
 .product-info__row {
   margin: 0 0 6px;
   font-size: 14px;
   line-height: 1.5;
   color: #444;
 }
-
 .product-info__label {
   font-weight: 700;
   color: #1f1f1f;

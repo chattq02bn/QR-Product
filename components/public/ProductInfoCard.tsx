@@ -52,6 +52,8 @@ export default function ProductInfoCard({ product }: Props) {
         )}
 
         <div className="product-info__meta">
+          <p className="product-info__name">{product.name}</p>
+
           {manufacturer && (
             <p className="product-info__row">
               <span className="product-info__label">NSX:</span> {manufacturer}
