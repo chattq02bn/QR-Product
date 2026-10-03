@@ -1,0 +1,122 @@
+
+> tra-cuu-san-pham@1.0.0 dev:lan
+> next dev -H 0.0.0.0
+
+  ▲ Next.js 14.2.35
+  - Local:        http://localhost:3000
+  - Network:      http://0.0.0.0:3000
+  - Environments: .env
+
+ ✓ Starting...
+ ✓ Ready in 5s
+ ○ Compiling / ...
+ ✓ Compiled /middleware in 27.4s (5199 modules)
+ GET /?code=anh-quat 200 in 28828ms
+ ○ Compiling /admin ...
+ ✓ Compiled /admin in 22.4s (5859 modules)
+ GET / 200 in 5610ms
+ GET / 200 in 2351ms
+ GET /?code=anh-quat 200 in 9802ms
+ GET /admin 200 in 24791ms
+ GET /admin 200 in 85ms
+ ⚠ Cross origin request detected from 192.168.110.62 to /_next/* resource. In a future major version of Next.js, you will need to explicitly configure "allowedDevOrigins" in next.config to allow this.
+Read more: https://nextjs.org/docs/app/api-reference/config/next-config-js/allowedDevOrigins
+ ○ Compiling /api/products ...
+ ✓ Compiled /api/products in 1379ms (3053 modules)
+ ✓ Compiled (3075 modules)
+ GET /api/auth/status 200 in 5086ms
+ GET /api/products?page=1&pageSize=10 200 in 5091ms
+ GET /api/auth/status 200 in 33ms
+ GET /api/products?page=1&pageSize=10 200 in 37ms
+ GET / 200 in 610ms
+ GET /?code=quat-tran-ledtech-5-canh 200 in 104ms
+ GET / 200 in 60ms
+ GET /?code=anh-quat 200 in 58ms
+ GET /?code=anh-quat 200 in 127ms
+ GET /?code=anh-quat 200 in 60ms
+ GET /?code=anh-quat 200 in 56ms
+ ○ Compiling /api/products/[id] ...
+ ✓ Compiled /api/products/[id] in 2.7s (3324 modules)
+[cloudinary] không xóa được ảnh sample Error: Chưa cấu hình Cloudinary (thiếu CLOUDINARY_* trong .env)
+    at ensureConfig (webpack-internal:///(rsc)/./lib/cloudinary.ts:28:15)
+    at deleteImage (webpack-internal:///(rsc)/./lib/cloudinary.ts:70:9)
+    at eval (webpack-internal:///(rsc)/./lib/cloudinary.ts:81:59)
+    at Array.map (<anonymous>)
+    at deleteImages (webpack-internal:///(rsc)/./lib/cloudinary.ts:81:49)
+    at PUT (webpack-internal:///(rsc)/./app/api/products/[id]/route.ts:126:80)
+    at async C:\Users\Window11\Desktop\QR\node_modules\next\dist\compiled\next-server\app-route.runtime.dev.js:6:57228
+    at async eT.execute (C:\Users\Window11\Desktop\QR\node_modules\next\dist\compiled\next-server\app-route.runtime.dev.js:6:46851)
+    at async eT.handle (C:\Users\Window11\Desktop\QR\node_modules\next\dist\compiled\next-server\app-route.runtime.dev.js:6:58760)
+    at async doRender (C:\Users\Window11\Desktop\QR\node_modules\next\dist\server\base-server.js:1366:42)
+    at async cacheEntry.responseCache.get.routeKind (C:\Users\Window11\Desktop\QR\node_modules\next\dist\server\base-server.js:1576:40)
+    at async DevServer.renderToResponseWithComponentsImpl (C:\Users\Window11\Desktop\QR\node_modules\next\dist\server\base-server.js:1496:28)
+    at async DevServer.renderPageComponent (C:\Users\Window11\Desktop\QR\node_modules\next\dist\server\base-server.js:1924:24)
+    at async DevServer.renderToResponseImpl (C:\Users\Window11\Desktop\QR\node_modules\next\dist\server\base-server.js:1962:32)
+    at async DevServer.pipeImpl (C:\Users\Window11\Desktop\QR\node_modules\next\dist\server\base-server.js:922:25)
+    at async NextNodeServer.handleCatchallRenderRequest (C:\Users\Window11\Desktop\QR\node_modules\next\dist\server\next-server.js:272:17)
+    at async DevServer.handleRequestImpl (C:\Users\Window11\Desktop\QR\node_modules\next\dist\server\base-server.js:818:17)
+    at async C:\Users\Window11\Desktop\QR\node_modules\next\dist\server\dev\next-dev-server.js:339:20
+    at async Span.traceAsyncFn (C:\Users\Window11\Desktop\QR\node_modules\next\dist\trace\trace.js:154:20)
+    at async DevServer.handleRequest (C:\Users\Window11\Desktop\QR\node_modules\next\dist\server\dev\next-dev-server.js:336:24)
+    at async invokeRender (C:\Users\Window11\Desktop\QR\node_modules\next\dist\server\lib\router-server.js:179:21)
+    at async handleRequest (C:\Users\Window11\Desktop\QR\node_modules\next\dist\server\lib\router-server.js:359:24)
+    at async requestHandlerImpl (C:\Users\Window11\Desktop\QR\node_modules\next\dist\server\lib\router-server.js:383:13)
+    at async Server.requestListener (C:\Users\Window11\Desktop\QR\node_modules\next\dist\server\lib\start-server.js:141:13)
+[cloudinary] không xóa được ảnh sample Error: Chưa cấu hình Cloudinary (thiếu CLOUDINARY_* trong .env)
+    at ensureConfig (webpack-internal:///(rsc)/./lib/cloudinary.ts:28:15)
+    at deleteImage (webpack-internal:///(rsc)/./lib/cloudinary.ts:70:9)
+    at eval (webpack-internal:///(rsc)/./lib/cloudinary.ts:81:59)
+    at Array.map (<anonymous>)
+    at deleteImages (webpack-internal:///(rsc)/./lib/cloudinary.ts:81:49)
+    at PUT (webpack-internal:///(rsc)/./app/api/products/[id]/route.ts:126:80)
+    at async C:\Users\Window11\Desktop\QR\node_modules\next\dist\compiled\next-server\app-route.runtime.dev.js:6:57228
+    at async eT.execute (C:\Users\Window11\Desktop\QR\node_modules\next\dist\compiled\next-server\app-route.runtime.dev.js:6:46851)
+    at async eT.handle (C:\Users\Window11\Desktop\QR\node_modules\next\dist\compiled\next-server\app-route.runtime.dev.js:6:58760)
+    at async doRender (C:\Users\Window11\Desktop\QR\node_modules\next\dist\server\base-server.js:1366:42)
+    at async cacheEntry.responseCache.get.routeKind (C:\Users\Window11\Desktop\QR\node_modules\next\dist\server\base-server.js:1576:40)
+    at async DevServer.renderToResponseWithComponentsImpl (C:\Users\Window11\Desktop\QR\node_modules\next\dist\server\base-server.js:1496:28)
+    at async DevServer.renderPageComponent (C:\Users\Window11\Desktop\QR\node_modules\next\dist\server\base-server.js:1924:24)
+    at async DevServer.renderToResponseImpl (C:\Users\Window11\Desktop\QR\node_modules\next\dist\server\base-server.js:1962:32)
+    at async DevServer.pipeImpl (C:\Users\Window11\Desktop\QR\node_modules\next\dist\server\base-server.js:922:25)
+    at async NextNodeServer.handleCatchallRenderRequest (C:\Users\Window11\Desktop\QR\node_modules\next\dist\server\next-server.js:272:17)
+    at async DevServer.handleRequestImpl (C:\Users\Window11\Desktop\QR\node_modules\next\dist\server\base-server.js:818:17)
+    at async C:\Users\Window11\Desktop\QR\node_modules\next\dist\server\dev\next-dev-server.js:339:20
+    at async Span.traceAsyncFn (C:\Users\Window11\Desktop\QR\node_modules\next\dist\trace\trace.js:154:20)
+    at async DevServer.handleRequest (C:\Users\Window11\Desktop\QR\node_modules\next\dist\server\dev\next-dev-server.js:336:24)
+    at async invokeRender (C:\Users\Window11\Desktop\QR\node_modules\next\dist\server\lib\router-server.js:179:21)
+    at async handleRequest (C:\Users\Window11\Desktop\QR\node_modules\next\dist\server\lib\router-server.js:359:24)
+    at async requestHandlerImpl (C:\Users\Window11\Desktop\QR\node_modules\next\dist\server\lib\router-server.js:383:13)
+    at async Server.requestListener (C:\Users\Window11\Desktop\QR\node_modules\next\dist\server\lib\start-server.js:141:13)
+[cloudinary] không xóa được ảnh sample Error: Chưa cấu hình Cloudinary (thiếu CLOUDINARY_* trong .env)
+    at ensureConfig (webpack-internal:///(rsc)/./lib/cloudinary.ts:28:15)
+    at deleteImage (webpack-internal:///(rsc)/./lib/cloudinary.ts:70:9)
+    at eval (webpack-internal:///(rsc)/./lib/cloudinary.ts:81:59)
+    at Array.map (<anonymous>)
+    at deleteImages (webpack-internal:///(rsc)/./lib/cloudinary.ts:81:49)
+    at PUT (webpack-internal:///(rsc)/./app/api/products/[id]/route.ts:126:80)
+    at async C:\Users\Window11\Desktop\QR\node_modules\next\dist\compiled\next-server\app-route.runtime.dev.js:6:57228
+    at async eT.execute (C:\Users\Window11\Desktop\QR\node_modules\next\dist\compiled\next-server\app-route.runtime.dev.js:6:46851)
+    at async eT.handle (C:\Users\Window11\Desktop\QR\node_modules\next\dist\compiled\next-server\app-route.runtime.dev.js:6:58760)
+    at async doRender (C:\Users\Window11\Desktop\QR\node_modules\next\dist\server\base-server.js:1366:42)
+    at async cacheEntry.responseCache.get.routeKind (C:\Users\Window11\Desktop\QR\node_modules\next\dist\server\base-server.js:1576:40)
+    at async DevServer.renderToResponseWithComponentsImpl (C:\Users\Window11\Desktop\QR\node_modules\next\dist\server\base-server.js:1496:28)
+    at async DevServer.renderPageComponent (C:\Users\Window11\Desktop\QR\node_modules\next\dist\server\base-server.js:1924:24)
+    at async DevServer.renderToResponseImpl (C:\Users\Window11\Desktop\QR\node_modules\next\dist\server\base-server.js:1962:32)
+    at async DevServer.pipeImpl (C:\Users\Window11\Desktop\QR\node_modules\next\dist\server\base-server.js:922:25)
+    at async NextNodeServer.handleCatchallRenderRequest (C:\Users\Window11\Desktop\QR\node_modules\next\dist\server\next-server.js:272:17)
+    at async DevServer.handleRequestImpl (C:\Users\Window11\Desktop\QR\node_modules\next\dist\server\base-server.js:818:17)
+    at async C:\Users\Window11\Desktop\QR\node_modules\next\dist\server\dev\next-dev-server.js:339:20
+    at async Span.traceAsyncFn (C:\Users\Window11\Desktop\QR\node_modules\next\dist\trace\trace.js:154:20)
+    at async DevServer.handleRequest (C:\Users\Window11\Desktop\QR\node_modules\next\dist\server\dev\next-dev-server.js:336:24)
+    at async invokeRender (C:\Users\Window11\Desktop\QR\node_modules\next\dist\server\lib\router-server.js:179:21)
+    at async handleRequest (C:\Users\Window11\Desktop\QR\node_modules\next\dist\server\lib\router-server.js:359:24)
+    at async requestHandlerImpl (C:\Users\Window11\Desktop\QR\node_modules\next\dist\server\lib\router-server.js:383:13)
+    at async Server.requestListener (C:\Users\Window11\Desktop\QR\node_modules\next\dist\server\lib\start-server.js:141:13)
+ PUT /api/products/cmur2bm1d00001ai809c35mye 200 in 4134ms
+ ○ Compiling /api/products ...
+ ✓ Compiled /api/products in 765ms (3326 modules)
+ GET /api/products?page=1&pageSize=10 200 in 944ms
+ GET /?code=quat-tran-ledtech-5-canh 200 in 617ms
+ PUT /api/products/cmur2bm1d00001ai809c35mye 200 in 156ms
+ GET /api/products?page=1&pageSize=10 200 in 33ms
+ GET /?code=quat-tran-ledtech-5-canh&zarsrc=1303&utm_source=zalo&utm_medium=zalo&utm_campaign=zalo 200 in 70ms
