@@ -91,6 +91,7 @@ export const updateProductSchema = z.object({
 });
 
 export const loginSchema = z.object({
+  username: z.string().trim().min(1, 'Vui lòng nhập tài khoản'),
   password: z.string().min(1, 'Vui lòng nhập mật khẩu'),
 });
 

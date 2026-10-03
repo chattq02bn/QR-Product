@@ -2,25 +2,13 @@ import { NextRequest, NextResponse } from 'next/server';
 import {
   OPEN_WRITE_API_PATHS,
   SESSION_COOKIE,
-  isAuthEnabled,
   isWriteMethod,
   verifySessionToken,
 } from '@/lib/auth';
 
-/**
- * Chặn /admin và các API ghi khi ADMIN_PASSWORD được đặt.
- * Nếu không đặt ADMIN_PASSWORD thì cho truy cập tự do (chế độ dev).
- */
+/** Chặn /admin (chuyển về màn hình đăng nhập) và mọi API ghi khi chưa có phiên hợp lệ. */
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
-
-  if (!isAuthEnabled()) {
-    // Đang ở /admin/login trong chế độ tự do -> đưa về /admin
-    if (pathname === '/admin/login' && req.method === 'GET') {
-      return NextResponse.redirect(new URL('/admin', req.url));
-    }
-    return NextResponse.next();
-  }
 
   const token = req.cookies.get(SESSION_COOKIE)?.value;
   const authed = await verifySessionToken(token);

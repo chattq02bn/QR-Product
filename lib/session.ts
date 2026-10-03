@@ -1,12 +1,6 @@
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
-import {
-  SESSION_COOKIE,
-  SESSION_DAYS,
-  createSessionToken,
-  isAuthEnabled,
-  verifySessionToken,
-} from '@/lib/auth';
+import { SESSION_COOKIE, SESSION_DAYS, createSessionToken, verifySessionToken } from '@/lib/auth';
 import { getAppUrl } from '@/lib/qr';
 
 /** Cookie chỉ gắn cờ Secure khi trang đang chạy bằng https. */
@@ -16,7 +10,6 @@ function isHttpsDeployment(): boolean {
 
 /** Kiểm tra phiên đăng nhập hiện tại (chỉ gọi phía server). */
 export async function isAdminAuthenticated(): Promise<boolean> {
-  if (!isAuthEnabled()) return true;
   const token = cookies().get(SESSION_COOKIE)?.value;
   return verifySessionToken(token);
 }

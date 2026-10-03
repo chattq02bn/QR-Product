@@ -44,8 +44,6 @@ export default function ProductInfoCard({ product }: Props) {
 
   return (
     <section className="product-info">
-      <h2 className="product-info__title">Thông tin sản phẩm</h2>
-
       <div className={`product-info__body${hasImage ? '' : ' product-info__body--single'}`}>
         {hasImage && (
           <div className="product-info__media">
@@ -54,8 +52,6 @@ export default function ProductInfoCard({ product }: Props) {
         )}
 
         <div className="product-info__meta">
-          <p className="product-info__name">{product.name}</p>
-
           {manufacturer && (
             <p className="product-info__row">
               <span className="product-info__label">NSX:</span> {manufacturer}

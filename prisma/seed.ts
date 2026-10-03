@@ -1,7 +1,11 @@
 import { PrismaClient } from '@prisma/client';
+import { hashPassword } from '../lib/password';
 import { slugify } from '../lib/slug';
 
 const prisma = new PrismaClient();
+
+const ADMIN_USERNAME = 'Admin';
+const ADMIN_PASSWORD = 'Admin@123';
 
 const PRODUCT_NAME = 'Quạt trần LEDTECH 5 cánh';
 const PRODUCT_SLUG = 'quat-tran-ledtech-5-canh';
@@ -230,7 +234,20 @@ async function boostGuideImages() {
   );
 }
 
+async function seedAdmin() {
+  const existing = await prisma.admin.findUnique({ where: { username: ADMIN_USERNAME } });
+  if (existing) {
+    console.log(`Tài khoản admin "${ADMIN_USERNAME}" đã tồn tại, bỏ qua.`);
+    return;
+  }
+  await prisma.admin.create({
+    data: { username: ADMIN_USERNAME, passwordHash: await hashPassword(ADMIN_PASSWORD) },
+  });
+  console.log(`Đã tạo tài khoản admin "${ADMIN_USERNAME}".`);
+}
+
 async function main() {
+  await seedAdmin();
   await ensureDemoProduct();
   await seedProducts();
   await boostGuideImages();

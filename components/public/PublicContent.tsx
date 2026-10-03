@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState, useTransition } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { ChangeEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button, Image, Result, Typography } from 'antd';
@@ -17,10 +17,6 @@ type Props = {
   loadError: boolean;
 };
 
-const shouldUseCamera = () =>
-  typeof window !== 'undefined' &&
-  (window.innerWidth < 768 || window.matchMedia('(pointer: coarse)').matches);
-
 export default function PublicContent({ code, product, loadError }: Props) {
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -28,20 +24,10 @@ export default function PublicContent({ code, product, loadError }: Props) {
   const [scanError, setScanError] = useState<string | null>(null);
   const [decoding, setDecoding] = useState(false);
   const [mounted, setMounted] = useState(false);
-  const [isPending, startTransition] = useTransition();
 
   useEffect(() => {
     setMounted(true);
   }, []);
-
-  const goLookup = (next: string) => {
-    if (!next) return;
-    setScannerOpen(false);
-    setScanError(null);
-    startTransition(() => {
-      router.push(`/?code=${encodeURIComponent(next)}`);
-    });
-  };
 
   const handleScanResult = (raw: string) => {
     const found = extractLookupCode(raw);
@@ -49,7 +35,8 @@ export default function PublicContent({ code, product, loadError }: Props) {
       setScanError('Mã QR không chứa mã tra cứu hợp lệ. Hãy quét mã QR in trên sản phẩm.');
       return;
     }
-    goLookup(found);
+    setScannerOpen(false);
+    window.location.href = `/?code=${encodeURIComponent(found)}`;
   };
 
   const handleFileChange = async (event: ChangeEvent<HTMLInputElement>) => {
@@ -75,11 +62,7 @@ export default function PublicContent({ code, product, loadError }: Props) {
 
   const openScanner = () => {
     setScanError(null);
-    if (shouldUseCamera()) {
-      setScannerOpen(true);
-      return;
-    }
-    fileInputRef.current?.click();
+    setScannerOpen(true);
   };
 
   const scanPanel = (
@@ -88,8 +71,8 @@ export default function PublicContent({ code, product, loadError }: Props) {
         <h2 className="public-intro__title">Quét mã QR để tra cứu sản phẩm</h2>
         <ul className="public-intro__list">
           <li>Đưa mã QR in trên bao bì sản phẩm vào khung quét.</li>
-          <li>Máy ảnh tự nhận diện mã, không cần nhập tay.</li>
-          <li>Máy tính: chọn ảnh chứa mã QR từ thư viện.</li>
+          <li>Máy ảnh (mặt sau) tự nhận diện mã, không cần nhập tay.</li>
+          <li>Thiết bị không có camera: bấm &quot;Upload QR&quot; chọn ảnh mã QR.</li>
         </ul>
       </div>
 
@@ -105,13 +88,15 @@ export default function PublicContent({ code, product, loadError }: Props) {
         block
         icon={<QrcodeOutlined />}
         className="public-scan-btn"
-        loading={decoding || isPending}
+        loading={decoding}
         disabled={decoding}
         onClick={openScanner}
       >
-        {isPending ? 'Đang tải sản phẩm...' : 'Quét mã QR'}
+        Quét mã QR
       </Button>
-      <p className="public-lookup__hint">Điện thoại: quét bằng camera • Máy tính: chọn ảnh mã QR</p>
+      <p className="public-lookup__hint">
+        Điện thoại: quét bằng camera mặt sau • Không có camera: Upload QR
+      </p>
     </div>
   );
 

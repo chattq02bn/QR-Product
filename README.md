@@ -8,8 +8,8 @@ các ảnh hướng dẫn của sản phẩm đó.
 
 **Quản trị (`/admin`)**
 
-- Header quản trị (nền navy, vạch nhấn đỏ) gồm link "Xem trang công khai" và nút "Đăng xuất"
-  (nút đăng xuất chỉ hiện khi đặt `ADMIN_PASSWORD`).
+- Header quản trị (nền navy, vạch nhấn đỏ) gồm link "Xem trang công khai" và nút "Đăng xuất".
+- **Bắt buộc đăng nhập** bằng tài khoản admin (tạo từ seed) mới xem được bảng dữ liệu.
 - Thêm / sửa / xóa sản phẩm, tìm kiếm theo tên, phân trang; cột "Hạn QR" hiển thị trạng thái
   (Vĩnh viễn / ngày hết hạn / Còn X giờ / Đã hết hạn).
 - **Bắt buộc tối thiểu 1 ảnh hướng dẫn** khi tạo/sửa (form disable nút Lưu, API trả 400 nếu thiếu ảnh).
@@ -48,7 +48,7 @@ các ảnh hướng dẫn của sản phẩm đó.
 app/
   page.tsx                 # Trang công khai /?code=slug (Server Component)
   admin/page.tsx           # Trang quản trị /admin
-  admin/login/page.tsx     # Màn hình đăng nhập mật khẩu
+  admin/login/page.tsx     # Màn hình đăng nhập tài khoản/mật khẩu
   api/products/route.ts    # GET (danh sách), POST (tạo)
   api/products/[id]/route.ts  # GET, PUT, DELETE
   api/lookup/route.ts      # GET công khai theo slug
@@ -63,13 +63,13 @@ components/
   admin/ProductTable.tsx   # Bảng (desktop) / card (mobile), cột Hạn QR
   admin/ProductModal.tsx   # Modal thêm/sửa (Upload + link ảnh + hạn QR)
   admin/QrModal.tsx        # Modal mã QR (phóng to, tải PNG, in)
-  admin/LoginForm.tsx
+  admin/LoginForm.tsx      # Form đăng nhập (tài khoản + mật khẩu)
   public/PublicContent.tsx # Trang tra cứu (kiểm tra hạn QR)
 lib/
   prisma.ts cloudinary.ts slug.ts validators.ts qr.ts auth.ts session.ts
   api.ts client.ts print.ts format.ts
 prisma/schema.prisma, prisma/migrations/, prisma/seed.ts
-middleware.ts              # Chặn /admin và API ghi khi đặt ADMIN_PASSWORD
+middleware.ts              # Chặn /admin (chuyển về màn đăng nhập) và API ghi khi chưa đăng nhập
 ```
 
 ## Yêu cầu
@@ -109,16 +109,16 @@ CLOUDINARY_API_KEY=
 CLOUDINARY_API_SECRET=
 CLOUDINARY_FOLDER=tracuu
 NEXT_PUBLIC_APP_URL=http://localhost:3000
-ADMIN_PASSWORD=
+SESSION_SECRET=
 ```
 
-| Biến                  | Ý nghĩa                                              |
-| --------------------- | ---------------------------------------------------- |
-| `DATABASE_URL`        | Chuỗi kết nối PostgreSQL                             |
-| `CLOUDINARY_*`        | Khóa API Cloudinary để upload ảnh (chỉ server dùng)  |
-| `CLOUDINARY_FOLDER`   | Thư mục chứa ảnh trên Cloudinary (mặc định `tracuu`) |
-| `NEXT_PUBLIC_APP_URL` | Domain thật, dùng để tạo link trong mã QR            |
-| `ADMIN_PASSWORD`      | (Tùy chọn) Mật khẩu bảo vệ `/admin` và các API ghi   |
+| Biến                  | Ý nghĩa                                                                                          |
+| --------------------- | ------------------------------------------------------------------------------------------------ |
+| `DATABASE_URL`        | Chuỗi kết nối PostgreSQL                                                                         |
+| `CLOUDINARY_*`        | Khóa API Cloudinary để upload ảnh (chỉ server dùng)                                              |
+| `CLOUDINARY_FOLDER`   | Thư mục chứa ảnh trên Cloudinary (mặc định `tracuu`)                                             |
+| `NEXT_PUBLIC_APP_URL` | Domain thật, dùng để tạo link trong mã QR                                                        |
+| `SESSION_SECRET`      | (Tùy chọn) Secret ký cookie phiên đăng nhập; mặc định lấy từ `ADMIN_PASSWORD` rồi `DATABASE_URL` |
 
 ### 4. Lấy khóa Cloudinary
 
@@ -130,7 +130,7 @@ ADMIN_PASSWORD=
 
 ```bash
 npm run prisma:migrate     # prisma migrate dev  – tạo/cập nhật bảng
-npm run prisma:seed        # prisma db seed      – tạo sản phẩm mẫu "Quạt trần LEDTECH 5 cánh"
+npm run prisma:seed        # prisma db seed      – tạo sản phẩm mẫu + tài khoản admin (Admin / Admin@123)
 ```
 
 > Nếu đã có migration (deploy môi trường production): `npm run prisma:deploy`.
@@ -159,12 +159,14 @@ npm run dev                # http://localhost:3000
 
 ## Bảo vệ admin
 
-- Nếu **đặt** `ADMIN_PASSWORD`:
-  - `middleware.ts` chặn `/admin` (chuyển về màn hình đăng nhập) và mọi API ghi
-    (`POST/PUT/PATCH/DELETE` trên `/api/*`).
-  - Đăng nhập thành công sẽ đặt cookie httpOnly có chữ ký JWT (jose, HS256, hạn 7 ngày).
-  - API công khai (`GET /api/lookup`, `GET /api/products`, `GET /api/qr/*`) vẫn truy cập được mà không cần đăng nhập.
-- Nếu **không đặt** `ADMIN_PASSWORD`: cho truy cập tự do (phù hợp môi trường dev).
+- Đăng nhập **luôn bật** – tài khoản admin lưu trong bảng `Admin` (băm mật khẩu bằng `scrypt`):
+  seed tạo sẵn tài khoản **`Admin` / `Admin@123`** (đổi sau khi deploy).
+- `middleware.ts` chặn `/admin` (chuyển về màn hình đăng nhập `/admin/login`) và mọi API ghi
+  (`POST/PUT/PATCH/DELETE` trên `/api/*`) khi chưa có cookie phiên hợp lệ.
+- Đăng nhập thành công sẽ đặt cookie httpOnly có chữ ký JWT (jose, HS256, hạn 7 ngày);
+  secret ký lấy từ `SESSION_SECRET` (hoặc fallback `ADMIN_PASSWORD` → `DATABASE_URL`).
+- Đăng nhập lại khi đã có phiên sẽ bị chuyển về `/admin`; đăng xuất xóa cookie.
+- API công khai (`GET /api/lookup`, `GET /api/products`, `GET /api/qr/*`) vẫn truy cập được mà không cần đăng nhập.
 
 ## API
 
@@ -182,7 +184,7 @@ Response luôn theo cấu trúc `{ data }` hoặc `{ error: { message } }` kèm 
 | POST   | `/api/upload`                           | Upload multipart `files` (image/*, ≤10MB/ảnh)                                   |
 | DELETE | `/api/upload?publicId=`                 | Xóa một ảnh đã upload                                                           |
 | GET    | `/api/qr/[slug]?size=512&download=1`    | Ảnh PNG mã QR trỏ tới `${NEXT_PUBLIC_APP_URL}/?code=slug`                       |
-| POST   | `/api/auth/login`                       | Đăng nhập bằng `ADMIN_PASSWORD`                                                 |
+| POST   | `/api/auth/login`                       | Đăng nhập `{ username, password }` kiểm tra trong bảng `Admin`                  |
 | POST   | `/api/auth/logout`                      | Đăng xuất                                                                       |
 | GET    | `/api/auth/status`                      | `{ authEnabled }` – admin header hiện/ẩn nút đăng xuất                          |
 
@@ -202,12 +204,13 @@ Response luôn theo cấu trúc `{ data }` hoặc `{ error: { message } }` kèm 
    - `DATABASE_URL`
    - `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET`, `CLOUDINARY_FOLDER`
    - `NEXT_PUBLIC_APP_URL=https://ten-domain-cua-ban`
-   - `ADMIN_PASSWORD` (khuyến nghị)
+   - `SESSION_SECRET` (khuyến nghị – secret ký cookie phiên đăng nhập)
 
 5. Build Command đã cấu hình sẵn trong `vercel.json`
    (`prisma generate` → `prisma migrate deploy` → `next build`), không cần đổi trong dashboard.
 
-6. Seed dữ liệu cho production (tùy chọn): chạy `npm run prisma:seed` với `DATABASE_URL` trỏ vào Neon.
+6. Seed dữ liệu cho production: chạy `npm run prisma:seed` với `DATABASE_URL` trỏ vào Neon
+   (bắt buộc nếu muốn đăng nhập `/admin` – seed tạo tài khoản admin `Admin` / `Admin@123`).
 
 ### ⚠️ Lưu ý quan trọng khi in mã QR
 
