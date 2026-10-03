@@ -409,22 +409,38 @@ a {
   }
 }
 
-/* Mobile: thông tin sản phẩm xếp dọc */
+/* Mobile: thông tin sản phẩm xếp dọc, ảnh full width căn giữa */
 @media (max-width: 639px) {
   .product-info__body {
     flex-direction: column;
     gap: 12px;
   }
 
-  .product-info__media,
-  .product-info__media .ant-image {
+  .product-info__media {
     width: 100%;
-    max-width: 340px;
+    max-width: none;
+    padding: 0;
+    margin: 0 auto;
     align-self: center;
   }
 
   .product-info__media .ant-image {
-    height: 200px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: auto;
+    min-width: 240px;
+    min-height: 240px;
+    padding: 0;
+  }
+
+  .product-info__media .ant-image img {
+    width: 100%;
+    height: auto;
+    min-width: 100%;
+    min-height: 240px;
+    object-fit: contain;
   }
 }
 
