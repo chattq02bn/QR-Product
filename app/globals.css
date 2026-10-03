@@ -560,13 +560,23 @@ header.public-header .public-header__scan .ant-btn-icon {
 
 .admin-img-slider__viewport {
   width: 100%;
-  overflow: hidden;
+  overflow-x: auto;
+  overflow-y: hidden;
+  /* Cho phép kéo bằng tay trên điện thoại */
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x proximity;
+  scrollbar-width: none;
+}
+
+.admin-img-slider__viewport::-webkit-scrollbar {
+  display: none;
 }
 
 .admin-img-slider__track {
   display: flex;
   gap: 6px;
-  transition: transform 0.25s ease;
+  width: max-content;
 }
 
 .admin-img-slider__cell {
@@ -575,6 +585,7 @@ header.public-header .public-header__scan .ant-btn-icon {
   overflow: hidden;
   border-radius: 6px;
   line-height: 0;
+  scroll-snap-align: start;
 }
 
 .admin-img-slider__cell .ant-image {
