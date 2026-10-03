@@ -36,9 +36,14 @@ const lookupProduct = cache(async (code: string): Promise<LookupResult> => {
   }
 });
 
-function pickShareImage(product: ProductView): string | null {
-  const candidates = [product.imageUrl ?? '', product.images[0]?.url ?? ''];
-  return candidates.find((url) => url && isValidHttpUrl(url)) ?? null;
+/** Ảnh chia sẻ: ảnh sản phẩm -> ảnh hướng dẫn đầu tiên -> ảnh mã QR (luôn có ảnh cho OGP). */
+function pickShareImage(product: ProductView): string {
+  const candidates = [product.imageUrl?.trim() ?? '', product.images[0]?.url?.trim() ?? ''];
+  const absolute = candidates.find((url) => isValidHttpUrl(url));
+  if (absolute) return absolute;
+  const relative = candidates.find((url) => url.startsWith('/'));
+  if (relative) return `${getAppUrl()}${relative}`;
+  return `${getAppUrl()}/api/qr/${encodeURIComponent(product.slug)}`;
 }
 
 function truncate(text: string, max = 300): string {
@@ -98,13 +103,13 @@ export async function generateMetadata({ searchParams }: PageProps): Promise<Met
       siteName: SITE_NAME,
       title: shareTitle,
       description,
-      ...(image ? { images: [{ url: image, alt: product.name }] } : {}),
+      images: [{ url: image, alt: product.name }],
     },
     twitter: {
-      card: image ? 'summary_large_image' : 'summary',
+      card: 'summary_large_image',
       title: shareTitle,
       description,
-      ...(image ? { images: [image] } : {}),
+      images: [image],
     },
   };
 }
