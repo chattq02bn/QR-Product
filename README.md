@@ -191,28 +191,24 @@ Response luôn theo cấu trúc `{ data }` hoặc `{ error: { message } }` kèm 
 
 `qrExpiresAt`: ISO string (`2026-12-31T00:00:00.000Z`) hoặc `null` = vĩnh viễn.
 
-## Deploy (Vercel + Neon / Supabase)
+## Deploy (Vercel + Neon)
 
-1. **Postgres**: tạo project trên [Neon](https://neon.tech) hoặc [Supabase](https://supabase.com), copy `DATABASE_URL`.
+1. **Postgres (Neon)**: tạo project trên [Neon](https://neon.tech) → copy 2 connection string trong tab
+   _Pooled_ và _Direct_.
 2. **Cloudinary**: copy 3 khóa vào biến môi trường của Vercel.
 3. Push repo lên GitHub → import vào Vercel.
 4. Trong _Project Settings → Environment Variables_, thêm:
 
-   - `DATABASE_URL`
+   - `DATABASE_URL` (Neon – _Pooled_)
+   - `DIRECT_DATABASE_URL` (Neon – _Direct_, dùng cho `prisma migrate`)
    - `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET`, `CLOUDINARY_FOLDER`
    - `NEXT_PUBLIC_APP_URL=https://ten-domain-cua-ban`
    - `ADMIN_PASSWORD` (khuyến nghị)
 
-5. Đổi _Build Command_ của Vercel thành:
+5. Build Command đã cấu hình sẵn trong `vercel.json`
+   (`prisma generate` → `prisma migrate deploy` → `next build`), không cần đổi trong dashboard.
 
-   ```bash
-   npm run prisma:deploy && npm run build
-   ```
-
-   để áp dụng migration trước khi build.
-
-6. Deploy lần đầu, chạy seed (tùy chọn) bằng `npx prisma db seed` trong Vercel CLI hoặc psql local
-   trỏ vào production database.
+6. Seed dữ liệu cho production (tùy chọn): chạy `npm run prisma:seed` với `DATABASE_URL` trỏ vào Neon.
 
 ### ⚠️ Lưu ý quan trọng khi in mã QR
 
