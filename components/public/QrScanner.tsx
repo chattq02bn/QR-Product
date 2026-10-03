@@ -15,6 +15,7 @@ type Props = {
 };
 
 const VIEWPORT_ID = 'qr-scanner-host';
+const CAMERA_START_TIMEOUT_MS = 15000;
 
 export default function QrScanner({
   open,
@@ -49,16 +50,34 @@ export default function QrScanner({
       try {
         const html5Qrcode = new Html5Qrcode(VIEWPORT_ID, { verbose: false });
         scanner = html5Qrcode;
-        await html5Qrcode.start(
-          { facingMode: 'environment' },
-          { fps: 10 },
-          (decodedText) => {
-            if (disposed) return;
-            void html5Qrcode.stop().catch(() => undefined);
-            onResultRef.current(decodedText);
-          },
-          () => undefined,
-        );
+
+        let timedOut = false;
+        let timer: ReturnType<typeof setTimeout> | undefined;
+        const timeout = new Promise<never>((_, reject) => {
+          timer = setTimeout(() => {
+            timedOut = true;
+            reject(new Error('camera-start-timeout'));
+          }, CAMERA_START_TIMEOUT_MS);
+        });
+
+        try {
+          const startPromise = html5Qrcode.start(
+            { facingMode: 'environment' },
+            { fps: 10 },
+            (decodedText) => {
+              if (disposed) return;
+              void html5Qrcode.stop().catch(() => undefined);
+              onResultRef.current(decodedText);
+            },
+            () => undefined,
+          );
+          startPromise.then(() => {
+            if (timedOut) void html5Qrcode.stop().catch(() => undefined);
+          });
+          await Promise.race([startPromise, timeout]);
+        } finally {
+          clearTimeout(timer);
+        }
 
         if (disposed) {
           await html5Qrcode.stop().catch(() => undefined);
