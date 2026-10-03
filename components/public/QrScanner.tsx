@@ -17,6 +17,15 @@ type Props = {
 const VIEWPORT_ID = 'qr-scanner-host';
 const CAMERA_START_TIMEOUT_MS = 15000;
 
+function stopScanner(instance: Html5Qrcode | null): Promise<void> {
+  if (!instance) return Promise.resolve();
+  try {
+    return instance.stop().catch(() => undefined);
+  } catch {
+    return Promise.resolve();
+  }
+}
+
 export default function QrScanner({
   open,
   error,
@@ -66,28 +75,31 @@ export default function QrScanner({
             { fps: 10 },
             (decodedText) => {
               if (disposed) return;
-              void html5Qrcode.stop().catch(() => undefined);
+              void stopScanner(html5Qrcode);
               onResultRef.current(decodedText);
             },
             () => undefined,
           );
-          startPromise.then(() => {
-            if (timedOut) void html5Qrcode.stop().catch(() => undefined);
-          });
+          startPromise.then(
+            () => {
+              if (timedOut) void stopScanner(html5Qrcode);
+            },
+            () => undefined,
+          );
           await Promise.race([startPromise, timeout]);
         } finally {
           clearTimeout(timer);
         }
 
         if (disposed) {
-          await html5Qrcode.stop().catch(() => undefined);
+          await stopScanner(html5Qrcode);
           return;
         }
 
         setStarting(false);
       } catch {
         if (disposed) return;
-        if (scanner) await scanner.stop().catch(() => undefined);
+        await stopScanner(scanner);
         setCameraError('Không thể bật camera. Hãy bấm "Upload QR" để chọn ảnh mã QR.');
         setStarting(false);
       }
@@ -97,7 +109,7 @@ export default function QrScanner({
 
     return () => {
       disposed = true;
-      if (scanner) void scanner.stop().catch(() => undefined);
+      void stopScanner(scanner);
     };
   }, [open]);
 
