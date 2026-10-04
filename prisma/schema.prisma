@@ -17,6 +17,10 @@ model Product {
   description   String?   @db.Text
   /// Nhà sản xuất.
   manufacturer  String?
+  /// Thông số kỹ thuật (JSON dạng [{ "label": "Tên sản phẩm", "value": "..." }]).
+  specs         Json?
+  /// Nhà sản xuất / Đơn vị phân phối (JSON dạng [{ "label": "Tên đơn vị", "value": "..." }]).
+  distributor   Json?
   /// Thời điểm hết hạn mã QR. null = dùng vĩnh viễn.
   qrExpiresAt DateTime?
   createdAt DateTime      @default(now())

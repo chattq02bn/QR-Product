@@ -68,6 +68,8 @@ export async function POST(req: NextRequest) {
         imageUrl: input.imageUrl ?? null,
         description: input.description ?? null,
         manufacturer: input.manufacturer ?? null,
+        specs: input.specs ?? [],
+        distributor: input.distributor ?? [],
         qrExpiresAt: input.qrExpiresAt ?? null,
         images: {
           create: input.images.map((image, index) => ({

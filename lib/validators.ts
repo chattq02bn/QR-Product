@@ -48,6 +48,25 @@ export const productImageUrlSchema = z
   .url('Ảnh sản phẩm phải là link hợp lệ')
   .nullish();
 
+/** Một dòng "tên trường - giá trị" trong JSON thông số / nhà sản xuất. */
+export const specEntrySchema = z.object({
+  label: z
+    .string({ required_error: 'Tên trường là bắt buộc' })
+    .trim()
+    .min(1, 'Tên trường không được để trống')
+    .max(120, 'Tên trường tối đa 120 ký tự'),
+  value: z
+    .string({ invalid_type_error: 'Giá trị không hợp lệ' })
+    .trim()
+    .max(500, 'Giá trị tối đa 500 ký tự'),
+});
+
+/** Danh sách dòng thông tin: giữ nguyên thứ tự, cho phép thêm trường mới về sau. */
+export const specEntriesSchema = z
+  .array(specEntrySchema, { invalid_type_error: 'Danh sách thông tin không hợp lệ' })
+  .max(100, 'Tối đa 100 dòng thông tin')
+  .nullish();
+
 export const imageSchema = z.object({
   id: z.string().min(1).optional(),
   url: z.string().url('Ảnh không hợp lệ'),
@@ -76,6 +95,8 @@ export const createProductSchema = z.object({
   imageUrl: productImageUrlSchema,
   description: descriptionSchema,
   manufacturer: manufacturerSchema,
+  specs: specEntriesSchema,
+  distributor: specEntriesSchema,
   images: imagesSchema,
   qrExpiresAt: qrExpiresAtSchema,
 });
@@ -86,6 +107,8 @@ export const updateProductSchema = z.object({
   imageUrl: productImageUrlSchema,
   description: descriptionSchema,
   manufacturer: manufacturerSchema,
+  specs: specEntriesSchema,
+  distributor: specEntriesSchema,
   images: imagesSchema,
   qrExpiresAt: qrExpiresAtSchema,
 });

@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client';
+import type { SpecEntry } from '../lib/types';
 import { hashPassword } from '../lib/password';
 import { slugify } from '../lib/slug';
 
@@ -7,239 +8,90 @@ const prisma = new PrismaClient();
 const ADMIN_USERNAME = 'Admin';
 const ADMIN_PASSWORD = 'Admin@123';
 
-const PRODUCT_NAME = 'Quạt trần LEDTECH 5 cánh';
-const PRODUCT_SLUG = 'quat-tran-ledtech-5-canh';
+const BRAND = 'OML';
 
-const SEED_IMAGES = [
-  {
-    url: 'https://res.cloudinary.com/demo/image/upload/w_1200,q_auto/sample.jpg',
-    publicId: 'sample',
-    order: 0,
-  },
-  {
-    url: 'https://res.cloudinary.com/demo/image/upload/c_fill,w_1200,h_900,q_auto/sample.jpg',
-    publicId: 'sample',
-    order: 1,
-  },
-  {
-    url: 'https://res.cloudinary.com/demo/image/upload/c_fill,w_1200,h_1500,q_auto/sample.jpg',
-    publicId: 'sample',
-    order: 2,
-  },
-];
-
-const TOTAL_PRODUCTS = 320;
-
-const BRANDS = [
-  'LEDTECH',
-  'SANAKY',
-  'PANASONIC',
-  'ELECTROLUX',
-  'PHILIPS',
-  'SUNHOUSE',
-  'BLUESTONE',
-  'KANGAROO',
-  'ASAKA',
-  'SUPREME',
-  'GOLDEN INOX',
-  'MITSUBISHI',
-  'TOSHIBA',
-  'LOCKNLOCK',
-  'COINCO',
-];
-
-const CATEGORIES = [
-  { label: 'Quạt trần', models: ['5 cánh', '4 cánh', '3 cánh', 'đảo trần'] },
-  { label: 'Quạt cây', models: ['đứng', 'bàn', 'remote', 'mini'] },
-  { label: 'Đèn LED', models: ['downlight', 'tuýp', 'panel', 'ban công'] },
-  { label: 'Máy lọc nước', models: ['âm tủ', 'RO 7 cấp', 'đứng', 'công nghiệp'] },
-  { label: 'Máy lọc không khí', models: ['mini', 'phòng ngủ', 'phòng khách', 'công nghiệp'] },
-  { label: 'Lò vi sóng', models: ['23L', '25L', 'nướng đối lưu', 'kéo phím'] },
-  { label: 'Nồi cơm điện', models: ['1.8L', '2.0L', 'đôi', 'mini'] },
-  { label: 'Máy hút bụi', models: ['hút khô', 'hút ướt', 'robot', 'mini'] },
+/** Nhà sản xuất / Đơn vị phân phối (lưu JSON, sửa được trong modal admin). */
+const DISTRIBUTOR: SpecEntry[] = [
+  { label: 'Tên đơn vị', value: 'Công ty TNHH OML Việt Nam' },
+  { label: 'Mã số thuế', value: '0312345678' },
+  { label: 'Địa chỉ', value: 'Số 123 Đường Nguyễn Huệ, Quận 1, Thành phố Hồ Chí Minh' },
+  { label: 'Điện thoại', value: '028 3822 1111' },
+  { label: 'Email', value: 'lienhe@oml.vn' },
 ];
 
 const GUIDE_IMAGE_URLS = [
   'https://res.cloudinary.com/demo/image/upload/w_1200,q_auto/sample.jpg',
   'https://res.cloudinary.com/demo/image/upload/c_fill,w_1200,h_900,q_auto/sample.jpg',
   'https://res.cloudinary.com/demo/image/upload/c_fill,w_1200,h_1500,q_auto/sample.jpg',
-  'https://res.cloudinary.com/demo/image/upload/c_fill,w_900,h_1200,q_auto/sample.jpg',
-  'https://res.cloudinary.com/demo/image/upload/c_fill,w_1600,h_900,q_auto/sample.jpg',
-  'https://res.cloudinary.com/demo/image/upload/c_fill,w_1200,h_1200,q_auto/sample.jpg',
 ];
 
-const DAY_MS = 24 * 60 * 60 * 1000;
+const PRODUCT_IMAGE_URL = 'https://res.cloudinary.com/demo/image/upload/w_1200,q_auto/sample.jpg';
 
-function buildDescription(name: string, brand: string, category: string): string {
+type SeedProduct = {
+  /** Tên sản phẩm (tiếng Việt). */
+  name: string;
+  model: string;
+  /** Công suất động cơ. */
+  power: string;
+};
+
+const PRODUCTS: SeedProduct[] = [
+  { name: 'Quạt trần 8 cánh ECOFAN E8', model: 'QT26-E8', power: '65W' },
+  { name: 'Quạt trần 5 cánh ECOFAN F5', model: 'QT26-F51', power: '55W' },
+  { name: 'Quạt trần 5 cánh ECOFAN F5', model: 'QT26-F50', power: '55W' },
+  { name: 'Quạt trần 5 cánh ECOFAN F5', model: 'QT26-F51-60', power: '65W' },
+  { name: 'Quạt trần 6 cánh ECOFAN S6', model: 'QT26-S6-167', power: '65W' },
+  { name: 'Quạt trần 6 cánh ECOFAN S6', model: 'QT26-S6-137', power: '55W' },
+];
+
+function buildSpecs(product: SeedProduct): SpecEntry[] {
   return [
-    `${name} là sản phẩm thuộc nhóm ${category.toLowerCase()}, do ${brand} sản xuất.`,
+    { label: 'Tên sản phẩm', value: product.name },
+    { label: 'Nhãn hiệu', value: BRAND },
+    { label: 'Model', value: product.model },
+    { label: 'Công suất động cơ', value: product.power },
+  ];
+}
+
+function buildDescription(product: SeedProduct): string {
+  return [
+    `${product.name} là quạt trần do ${BRAND} sản xuất, công suất động cơ ${product.power}, model ${product.model}.`,
     'Sản phẩm được kiểm định chất lượng trước khi đóng gói và kèm hướng dẫn lắp đặt, sử dụng chi tiết.',
     'Quét mã QR trên bao bì để xem hướng dẫn sử dụng, video lắp đặt, chính sách bảo hành và các lưu ý an toàn.',
     'Liên hệ nhà phân phối gần nhất nếu cần hỗ trợ kỹ thuật hoặc thay thế phụ kiện chính hãng.',
   ].join(' ');
 }
 
-function expiryFor(index: number): Date | null {
-  if (index % 11 === 0) return new Date(Date.now() - 5 * DAY_MS);
-  if (index % 7 === 0) return new Date(Date.now() + 30 * DAY_MS);
-  return null;
-}
-
-async function ensureDemoProduct() {
-  const existing = await prisma.product.findUnique({
-    where: { slug: PRODUCT_SLUG },
-    include: { images: true },
-  });
-
-  if (existing) {
-    if (existing.images.length === 0) {
-      await prisma.productImage.createMany({
-        data: SEED_IMAGES.map((image) => ({ ...image, productId: existing.id })),
-      });
-      console.log(`Đã thêm ${SEED_IMAGES.length} ảnh mẫu cho "${existing.name}".`);
-    } else {
-      console.log(`Sản phẩm "${existing.name}" đã tồn tại, không seed lại.`);
-    }
-    return;
-  }
-
-  const product = await prisma.product.create({
-    data: {
-      name: PRODUCT_NAME,
-      slug: PRODUCT_SLUG,
-      manufacturer: 'LEDTECH',
-      description: buildDescription(PRODUCT_NAME, 'LEDTECH', 'Quạt trần'),
-      imageUrl: 'https://picsum.photos/seed/quat-tran-ledtech-5-canh/600/400',
-      images: { create: SEED_IMAGES },
-    },
-    include: { images: true },
-  });
-
-  console.log(`Đã tạo sản phẩm mẫu: "${product.name}" (mã tra cứu: ${product.slug})`);
-  console.log('Ảnh hướng dẫn:', product.images.length);
+/** Xóa toàn bộ dữ liệu cũ trước khi seed lại. */
+async function resetData() {
+  await prisma.productImage.deleteMany();
+  await prisma.product.deleteMany();
+  await prisma.admin.deleteMany();
+  console.log('Đã xóa toàn bộ dữ liệu sản phẩm, ảnh và tài khoản admin.');
 }
 
 async function seedProducts() {
-  const countBefore = await prisma.product.count();
-  const target = Math.max(TOTAL_PRODUCTS - countBefore, 0);
-
-  if (target === 0) {
-    console.log(`Đã có ${countBefore} sản phẩm, không cần seed thêm.`);
-    return;
-  }
-
-  const existing = await prisma.product.findMany({ select: { slug: true } });
-  const used = new Set(existing.map((row) => row.slug));
-
-  const maxModels = Math.max(...CATEGORIES.map((category) => category.models.length));
-  const maxCombos = BRANDS.length * CATEGORIES.length * maxModels;
-
-  const wanted: Array<{
-    name: string;
-    slug: string;
-    manufacturer: string;
-    description: string;
-    imageUrl: string;
-  }> = [];
-
-  for (let i = 0; wanted.length < target && i < maxCombos; i += 1) {
-    const brand = BRANDS[i % BRANDS.length];
-    const category = CATEGORIES[Math.floor(i / BRANDS.length) % CATEGORIES.length];
-    const model =
-      category.models[Math.floor(i / (BRANDS.length * CATEGORIES.length)) % category.models.length];
-    const name = `${category.label} ${brand} ${model}`;
-    const slug = slugify(name);
-    if (used.has(slug)) continue;
-    used.add(slug);
-
-    wanted.push({
-      name,
-      slug,
-      manufacturer: brand,
-      description: buildDescription(name, brand, category.label),
-      imageUrl: `https://picsum.photos/seed/${slug}/600/400`,
+  for (const [index, item] of PRODUCTS.entries()) {
+    const slug = slugify(`${item.name} ${item.model}`);
+    const product = await prisma.product.create({
+      data: {
+        name: item.name,
+        slug,
+        manufacturer: BRAND,
+        description: buildDescription(item),
+        imageUrl: PRODUCT_IMAGE_URL,
+        specs: buildSpecs(item),
+        distributor: DISTRIBUTOR,
+        images: {
+          create: GUIDE_IMAGE_URLS.map((url, order) => ({ url, publicId: '', order })),
+        },
+      },
     });
+    console.log(`[${index + 1}/${PRODUCTS.length}] ${product.name} (mã tra cứu: ${product.slug})`);
   }
-
-  if (wanted.length === 0) {
-    console.log('Không có dữ liệu mới để seed.');
-    return;
-  }
-
-  const now = Date.now();
-  await prisma.product.createMany({
-    data: wanted.map((product, index) => ({
-      ...product,
-      qrExpiresAt: expiryFor(index),
-      createdAt: new Date(now - index * 60_000),
-    })),
-  });
-
-  const created = await prisma.product.findMany({
-    where: { slug: { in: wanted.map((product) => product.slug) } },
-    select: { id: true },
-  });
-
-  await prisma.productImage.createMany({
-    data: created.flatMap((product, index) => {
-      const count = (index % 6) + 1;
-      return Array.from({ length: count }, (_, order) => ({
-        productId: product.id,
-        url: GUIDE_IMAGE_URLS[order % GUIDE_IMAGE_URLS.length],
-        publicId: '',
-        order,
-      }));
-    }),
-  });
-
-  const totalAfter = await prisma.product.count();
-  console.log(`Đã seed ${wanted.length} sản phẩm mới, tổng cộng ${totalAfter} sản phẩm.`);
-}
-
-const RICH_IMAGE_COUNT = 5;
-const RICH_PRODUCT_TARGET = 20;
-
-async function boostGuideImages() {
-  const products = await prisma.product.findMany({
-    select: {
-      id: true,
-      images: { select: { id: true } },
-    },
-    orderBy: { createdAt: 'desc' },
-  });
-
-  const candidates = products
-    .filter((product) => product.images.length < RICH_IMAGE_COUNT)
-    .slice(0, RICH_PRODUCT_TARGET);
-
-  if (candidates.length === 0) {
-    console.log('Đã đủ sản phẩm có nhiều ảnh hướng dẫn.');
-    return;
-  }
-
-  await prisma.productImage.createMany({
-    data: candidates.flatMap((product) => {
-      const startOrder = product.images.length;
-      return Array.from({ length: RICH_IMAGE_COUNT - product.images.length }, (_, index) => ({
-        productId: product.id,
-        url: GUIDE_IMAGE_URLS[(startOrder + index) % GUIDE_IMAGE_URLS.length],
-        publicId: '',
-        order: startOrder + index,
-      }));
-    }),
-  });
-
-  console.log(
-    `Đã bổ sung ảnh hướng dẫn lên ${RICH_IMAGE_COUNT} ảnh cho ${candidates.length} sản phẩm.`,
-  );
 }
 
 async function seedAdmin() {
-  const existing = await prisma.admin.findUnique({ where: { username: ADMIN_USERNAME } });
-  if (existing) {
-    console.log(`Tài khoản admin "${ADMIN_USERNAME}" đã tồn tại, bỏ qua.`);
-    return;
-  }
   await prisma.admin.create({
     data: { username: ADMIN_USERNAME, passwordHash: await hashPassword(ADMIN_PASSWORD) },
   });
@@ -247,10 +99,11 @@ async function seedAdmin() {
 }
 
 async function main() {
-  await seedAdmin();
-  await ensureDemoProduct();
+  await resetData();
   await seedProducts();
-  await boostGuideImages();
+  await seedAdmin();
+  const total = await prisma.product.count();
+  console.log(`Hoàn tất: ${total} sản phẩm trong cơ sở dữ liệu.`);
 }
 
 main()

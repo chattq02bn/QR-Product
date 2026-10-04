@@ -7,6 +7,7 @@ import { Button, Image, Result, Typography } from 'antd';
 import { QrcodeOutlined } from '@ant-design/icons';
 import QrScanner from '@/components/public/QrScanner';
 import ProductInfoCard from '@/components/public/ProductInfoCard';
+import ProductSpecBlocks from '@/components/public/ProductSpecBlocks';
 import { decodeQrFromFile, extractLookupCode } from '@/lib/qr-decode';
 import { isExpired } from '@/lib/format';
 import type { ProductView } from '@/lib/types';
@@ -159,6 +160,7 @@ export default function PublicContent({ code, product, loadError }: Props) {
     content = (
       <div>
         <ProductInfoCard key={product.id} product={product} />
+        <ProductSpecBlocks product={product} />
 
         {product.images.length === 0 ? (
           <Result

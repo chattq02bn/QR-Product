@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import type { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { fail, handleApiError, isP2002, ok, readJson } from '@/lib/api';
 import { toProductView } from '@/lib/serialize';
@@ -85,6 +86,15 @@ export async function PUT(req: NextRequest, { params }: Params) {
           description: input.description === undefined ? existing.description : input.description,
           manufacturer:
             input.manufacturer === undefined ? existing.manufacturer : input.manufacturer,
+          // undefined = không gửi lên -> giữ nguyên giá trị cũ
+          specs:
+            input.specs === undefined
+              ? ((existing.specs ?? []) as Prisma.InputJsonValue)
+              : (input.specs ?? []),
+          distributor:
+            input.distributor === undefined
+              ? ((existing.distributor ?? []) as Prisma.InputJsonValue)
+              : (input.distributor ?? []),
           // undefined = không gửi lên -> giữ nguyên hạn cũ
           qrExpiresAt: input.qrExpiresAt === undefined ? existing.qrExpiresAt : input.qrExpiresAt,
         },

@@ -173,7 +173,6 @@ header.public-header .public-header__scan .ant-btn-icon {
   border-radius: 14px;
   box-shadow: 0 1px 4px rgba(16, 53, 122, 0.06);
 }
-
 .public-guides__title {
   margin: 0 0 14px;
   font-size: 17px;
@@ -199,6 +198,78 @@ header.public-header .public-header__scan .ant-btn-icon {
   display: block;
   border: 1px solid #e8edf7;
   border-radius: 10px;
+}
+
+/* Khối "Thông số kỹ thuật" và "Nhà sản xuất / Đơn vị phân phối" trên trang tra cứu */
+.public-specs {
+  margin-bottom: 16px;
+  padding: 16px;
+  background: #fff;
+  border: 1px solid #e8edf7;
+  border-radius: 14px;
+  box-shadow: 0 1px 4px rgba(16, 53, 122, 0.06);
+}
+
+.public-specs__title {
+  margin: 0 0 12px;
+  font-size: 17px;
+  line-height: 1.4;
+  font-weight: 700;
+  color: #10357a;
+}
+
+.public-specs__list {
+  margin: 0;
+}
+
+.public-specs__row {
+  display: flex;
+  gap: 14px;
+  padding: 8px 0;
+  border-bottom: 1px dashed #eef2fa;
+}
+
+.public-specs__row:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
+.public-specs__row:first-child {
+  padding-top: 0;
+}
+
+.public-specs__label {
+  flex: none;
+  width: 200px;
+  font-size: 14px;
+  line-height: 1.5;
+  font-weight: 700;
+  color: #1f1f1f;
+}
+
+.public-specs__value {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #444;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 575px) {
+  .public-specs {
+    padding: 14px;
+  }
+
+  .public-specs__row {
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .public-specs__label {
+    width: auto;
+  }
 }
 
 .public-lookup {
@@ -709,12 +780,29 @@ header.public-header .public-header__scan .ant-btn-icon {
   min-width: 0;
 }
 
-.product-image {
+/* Danh sách "tên trường - giá trị" (thông số kỹ thuật, nhà sản xuất) trong modal */
+.entry-list {
   display: flex;
   flex-direction: column;
   gap: 8px;
 }
 
+.entry-list__row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.entry-list__row .ant-form-item {
+  flex: 1;
+  min-width: 0;
+}
+
+.product-image {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
 .product-image__frame {
   display: flex;
   align-items: center;

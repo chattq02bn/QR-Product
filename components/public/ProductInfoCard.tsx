@@ -3,11 +3,19 @@
 import { useEffect, useRef, useState } from 'react';
 import { Button, Image } from 'antd';
 import { isValidHttpUrl } from '@/lib/format';
-import type { ProductView } from '@/lib/types';
+import type { ProductView, SpecEntry } from '@/lib/types';
 
 type Props = {
   product: ProductView;
 };
+
+/** Lấy giá trị của một trường trong JSON thông số theo danh sách tên gọi (không phân biệt hoa thường). */
+function findSpecValue(entries: SpecEntry[] | null, labels: string[]): string {
+  if (!Array.isArray(entries)) return '';
+  const wanted = labels.map((label) => label.trim().toLowerCase());
+  const found = entries.find((entry) => wanted.includes((entry.label ?? '').trim().toLowerCase()));
+  return (found?.value ?? '').trim();
+}
 
 export default function ProductInfoCard({ product }: Props) {
   const [expanded, setExpanded] = useState(false);
@@ -16,8 +24,9 @@ export default function ProductInfoCard({ product }: Props) {
   const expandedRef = useRef(false);
 
   const imageUrl = product.imageUrl?.trim() ?? '';
-  const manufacturer = product.manufacturer?.trim() ?? '';
   const description = product.description?.trim() ?? '';
+  const model = findSpecValue(product.specs, ['Model', 'Mô hình']);
+  const brand = findSpecValue(product.specs, ['Nhãn hiệu', 'Thương hiệu', 'Brand']);
 
   useEffect(() => {
     expandedRef.current = expanded;
@@ -54,9 +63,15 @@ export default function ProductInfoCard({ product }: Props) {
         <div className="product-info__meta">
           <p className="product-info__name">{product.name}</p>
 
-          {manufacturer && (
+          {model && (
             <p className="product-info__row">
-              <span className="product-info__label">NSX:</span> {manufacturer}
+              <span className="product-info__label">Model:</span> {model}
+            </p>
+          )}
+
+          {brand && (
+            <p className="product-info__row">
+              <span className="product-info__label">Nhãn hiệu:</span> {brand}
             </p>
           )}
 

@@ -18,13 +18,13 @@ import {
   Upload,
 } from 'antd';
 import type { RcFile, UploadFile, UploadProps } from 'antd/es/upload/interface';
-import { LinkOutlined, PlusOutlined, UploadOutlined } from '@ant-design/icons';
+import { DeleteOutlined, LinkOutlined, PlusOutlined, UploadOutlined } from '@ant-design/icons';
 import { apiFetch } from '@/lib/client';
 import { isValidHttpUrl } from '@/lib/format';
 import { uploadProductImage } from '@/lib/queries';
 import type { ProductPayload } from '@/lib/queries';
 import { MAX_IMAGE_BYTES, MAX_IMAGES_PER_PRODUCT } from '@/lib/validators';
-import type { ProductView } from '@/lib/types';
+import type { ProductView, SpecEntry } from '@/lib/types';
 
 type ImageItem = {
   key: string;
@@ -51,6 +51,10 @@ type FormValues = {
   imageUrl?: string;
   description?: string;
   manufacturer?: string;
+  /** Thông số kỹ thuật: danh sách "tên trường - giá trị" lưu JSON. */
+  specs?: SpecEntry[];
+  /** Nhà sản xuất / Đơn vị phân phối: danh sách "tên trường - giá trị" lưu JSON. */
+  distributor?: SpecEntry[];
 };
 
 type Props = {
@@ -108,6 +112,48 @@ function formatDateTime(date: Date): string {
   return `${pad(date.getDate())}/${pad(date.getMonth() + 1)}/${date.getFullYear()} ${pad(date.getHours())}:${pad(
     date.getMinutes(),
   )}`;
+}
+
+/** Các trường gợi ý sẵn cho "Thông số kỹ thuật" khi thêm sản phẩm mới. */
+const DEFAULT_SPEC_LABELS = ['Tên sản phẩm', 'Nhãn hiệu', 'Model', 'Công suất động cơ'];
+
+/** Các trường gợi ý sẵn cho "Nhà sản xuất / Đơn vị phân phối" khi thêm sản phẩm mới. */
+const DEFAULT_DISTRIBUTOR_LABELS = ['Tên đơn vị', 'Mã số thuế', 'Địa chỉ', 'Điện thoại', 'Email'];
+
+/**
+ * Đưa dữ liệu JSON đã lưu về dạng dòng của Form.List.
+ * Sản phẩm chưa có dữ liệu -> mở sẵn các dòng gợi ý, admin chỉ việc nhập giá trị.
+ */
+function toFormEntries(entries: SpecEntry[] | null | undefined, fallbackLabels: string[]): SpecEntry[] {
+  if (entries && entries.length > 0) {
+    return entries.map((entry) => ({ label: entry.label, value: entry.value }));
+  }
+  return fallbackLabels.map((label) => ({ label, value: '' }));
+}
+
+type CollectResult = { ok: true; entries: SpecEntry[] } | { ok: false; error: string };
+
+/** Bỏ dòng trống, bắt lỗi dòng có giá trị nhưng thiếu tên trường. */
+function collectEntries(
+  rows: SpecEntry[] | undefined,
+  section: string,
+): CollectResult {
+  const cleaned = (rows ?? [])
+    .map((row) => ({
+      label: (row?.label ?? '').trim(),
+      value: (row?.value ?? '').trim(),
+    }))
+    .filter((row) => row.label || row.value);
+
+  const missing = cleaned.find((row) => !row.label);
+  if (missing) {
+    return {
+      ok: false,
+      error: `${section}: dòng có giá trị "${missing.value}" thì phải nhập tên trường`,
+    };
+  }
+
+  return { ok: true, entries: cleaned };
 }
 
 export default function ProductModal({ open, product, onClose, onSave }: Props) {
@@ -168,6 +214,8 @@ export default function ProductModal({ open, product, onClose, onSave }: Props) 
       imageUrl: product?.imageUrl ?? '',
       description: product?.description ?? '',
       manufacturer: product?.manufacturer ?? '',
+      specs: toFormEntries(product?.specs, DEFAULT_SPEC_LABELS),
+      distributor: toFormEntries(product?.distributor, DEFAULT_DISTRIBUTOR_LABELS),
       qrMode: split ? 'duration' : 'permanent',
       qrDuration: split?.duration ?? 7,
       qrUnit: split?.unit ?? 'day',
@@ -383,6 +431,21 @@ export default function ProductModal({ open, product, onClose, onSave }: Props) 
 
     const pendingItems = items.filter((item) => item.file && !item.id);
 
+    const specsResult = collectEntries(values.specs, 'Thông số kỹ thuật');
+    if (!specsResult.ok) {
+      message.error(specsResult.error);
+      return;
+    }
+
+    const distributorResult = collectEntries(
+      values.distributor,
+      'Nhà sản xuất / Đơn vị phân phối',
+    );
+    if (!distributorResult.ok) {
+      message.error(distributorResult.error);
+      return;
+    }
+
     setSaving(true);
     try {
       const uploadedByKey = new Map<string, { url: string; publicId: string }>();
@@ -446,6 +509,8 @@ export default function ProductModal({ open, product, onClose, onSave }: Props) 
         imageUrl,
         description: values.description?.trim() || null,
         manufacturer: values.manufacturer?.trim() || null,
+        specs: specsResult.entries,
+        distributor: distributorResult.entries,
         qrExpiresAt,
         images: items
           .map((item) => {
@@ -469,6 +534,59 @@ export default function ProductModal({ open, product, onClose, onSave }: Props) 
     }
   };
 
+  /** Danh sách "tên trường - giá trị" cho một khối JSON (thêm/sửa/xóa dòng tùy ý). */
+  const renderEntryList = (
+    name: 'specs' | 'distributor',
+    labelPlaceholder: string,
+    valuePlaceholder: string,
+  ) => (
+    <Form.List name={name}>
+      {(fields, { add, remove }) => (
+        <div className="entry-list">
+          {fields.map((field) => (
+            <div className="entry-list__row" key={field.key}>
+              <Form.Item name={[field.name, 'label']} style={{ marginBottom: 0 }}>
+                <Input
+                  placeholder={labelPlaceholder}
+                  maxLength={120}
+                  allowClear
+                  disabled={saving}
+                />
+              </Form.Item>
+              <Form.Item name={[field.name, 'value']} style={{ marginBottom: 0 }}>
+                <Input
+                  placeholder={valuePlaceholder}
+                  maxLength={500}
+                  allowClear
+                  disabled={saving}
+                />
+              </Form.Item>
+              <Button
+                type="text"
+                danger
+                icon={<DeleteOutlined />}
+                title="Xóa dòng"
+                aria-label="Xóa dòng"
+                disabled={saving}
+                onClick={() => remove(field.name)}
+              />
+            </div>
+          ))}
+
+          <Button
+            type="dashed"
+            block
+            icon={<PlusOutlined />}
+            disabled={saving}
+            onClick={() => add({ label: '', value: '' })}
+          >
+            Thêm trường
+          </Button>
+        </div>
+      )}
+    </Form.List>
+  );
+
   return (
     <Modal
       open={open}
@@ -487,9 +605,9 @@ export default function ProductModal({ open, product, onClose, onSave }: Props) 
       }}
       maskClosable={false}
       destroyOnHidden
-      width="min(96vw, 900px)"
+      width="min(96vw, 1100px)"
       centered
-      styles={{ body: { maxHeight: '70vh', overflowY: 'auto', overscrollBehavior: 'contain' } }}
+      styles={{ body: { maxHeight: '78vh', overflowY: 'auto', overscrollBehavior: 'contain' } }}
     >
       <Form<FormValues>
         form={form}
@@ -756,6 +874,24 @@ export default function ProductModal({ open, product, onClose, onSave }: Props) 
             )}
           </div>
         </div>
+
+        <Divider orientation="left" plain style={{ margin: '4px 0 12px' }}>
+          Thông số kỹ thuật
+        </Divider>
+        <Typography.Paragraph type="secondary" style={{ marginBottom: 10 }}>
+          Nhập sẵn: Tên sản phẩm, Nhãn hiệu, Model, Công suất động cơ. Cần thêm trường nào thì bấm
+          &quot;Thêm trường&quot;.
+        </Typography.Paragraph>
+        {renderEntryList('specs', 'Tên sản phẩm', 'Ví dụ: Quạt trần 8 cánh ECOFAN E8')}
+
+        <Divider orientation="left" plain style={{ margin: '20px 0 12px' }}>
+          Nhà sản xuất / Đơn vị phân phối
+        </Divider>
+        <Typography.Paragraph type="secondary" style={{ marginBottom: 10 }}>
+          Nhập sẵn: Tên đơn vị, Mã số thuế, Địa chỉ, Điện thoại, Email. Cần thêm trường nào thì bấm
+          &quot;Thêm trường&quot;.
+        </Typography.Paragraph>
+        {renderEntryList('distributor', 'Tên đơn vị', 'Nhập giá trị')}
       </Form>
     </Modal>
   );
