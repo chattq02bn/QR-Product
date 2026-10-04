@@ -173,16 +173,18 @@ export default function PublicContent({ code, product, loadError }: Props) {
             <h2 className="public-guides__title">Hướng dẫn sử dụng</h2>
 
             <div className="public-guides__list">
-              {product.images.map((image, index) => (
-                <Image
-                  key={image.id}
-                  src={image.url}
-                  alt={`Trang hướng dẫn ${index + 1}`}
-                  loading="lazy"
-                  style={{ width: '100%', height: 'auto', display: 'block' }}
-                  preview={false}
-                />
-              ))}
+              <Image.PreviewGroup>
+                {product.images.map((image, index) => (
+                  <Image
+                    key={image.id}
+                    src={image.url}
+                    alt={`Trang hướng dẫn ${index + 1}`}
+                    loading="lazy"
+                    style={{ width: '100%', height: 'auto', display: 'block' }}
+                    preview={{ mask: 'Xem ảnh' }}
+                  />
+                ))}
+              </Image.PreviewGroup>
             </div>
           </section>
         )}
