@@ -4,6 +4,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { NextRequest, NextResponse } from 'next/server';
 import { fail, handleApiError, readJson } from '@/lib/api';
+import { createZip } from '@/lib/zip';
 import { prisma } from '@/lib/prisma';
 import { QR_PNG_SIZE, renderQrPng } from '@/lib/qr-png';
 import { qrExportSchema } from '@/lib/validators';
@@ -54,7 +55,7 @@ function runRar(rarBin: string, args: string[], cwd: string): Promise<void> {
 
 /**
  * POST /api/qr/export
- * Sinh ảnh PNG mã QR rồi nén thành file .rar để tải về.
+ * Sinh ảnh PNG mã QR rồi nén thành file .rar (hoặc .zip dự phòng) để tải về.
  * Body: { all: true } để tải tất cả, hoặc { ids: [...] } để tải các sản phẩm đã chọn.
  */
 export async function POST(req: NextRequest) {
@@ -75,45 +76,52 @@ export async function POST(req: NextRequest) {
     }
 
     // Sinh ảnh PNG, xử lý song song theo nhóm nhỏ để không chiếm nhiều bộ nhớ
+    const files: { name: string; data: Buffer }[] = [];
     const CONCURRENCY = 8;
     for (let i = 0; i < products.length; i += CONCURRENCY) {
       const chunk = products.slice(i, i + CONCURRENCY);
       await Promise.all(
         chunk.map(async (product) => {
           const buffer = await renderQrPng(product.slug, size);
-          await fs.writeFile(path.join(tempDir, `${product.slug}.png`), buffer);
+          files.push({ name: `${product.slug}.png`, data: buffer });
         }),
       );
     }
+    files.sort((a, b) => a.name.localeCompare(b.name));
 
-    const bin = await resolveRarBin();
-    if (!bin) {
-      return fail(
-        'Không tìm thấy Rar.exe của WinRAR trên máy chủ. Hãy cài WinRAR hoặc đặt biến RAR_PATH.',
-        503,
-      );
-    }
-
-    const archivePath = path.join(tempDir, 'ma-qr.rar');
-
-    try {
-      await runRar(bin, ['a', '-idq', '-ep1', archivePath, '*.png'], tempDir);
-    } catch (error) {
-      console.error('[qr-export] lỗi nén .rar:', error);
-      return fail(
-        'Không nén được file .rar: máy chủ cần cài WinRAR (Rar.exe). Đặt biến RAR_PATH nếu WinRAR nằm ở thư mục khác.',
-        503,
-      );
-    }
-
-    const bytes = await fs.readFile(archivePath);
     const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, '');
-    const filename = `ma-qr-${products.length}-san-pham-${stamp}.rar`;
+    const bin = await resolveRarBin();
+
+    let bytes: Buffer;
+    let ext: 'rar' | 'zip';
+
+    if (bin) {
+      await Promise.all(
+        files.map((file) => fs.writeFile(path.join(tempDir, file.name), file.data)),
+      );
+      const archivePath = path.join(tempDir, 'ma-qr.rar');
+      try {
+        await runRar(bin, ['a', '-idq', '-ep1', archivePath, '*.png'], tempDir);
+        bytes = await fs.readFile(archivePath);
+        ext = 'rar';
+      } catch (error) {
+        // Không nén được bằng WinRAR: chuyển sang .zip thuần Node.js
+        console.error('[qr-export] lỗi nén .rar, chuyển sang .zip:', error);
+        bytes = createZip(files);
+        ext = 'zip';
+      }
+    } else {
+      // Không có WinRAR: tự nén .zip bằng Node.js, không cần cài thêm gì
+      bytes = createZip(files);
+      ext = 'zip';
+    }
+
+    const filename = `ma-qr-${products.length}-san-pham-${stamp}.${ext}`;
 
     return new NextResponse(new Uint8Array(bytes), {
       status: 200,
       headers: {
-        'Content-Type': 'application/vnd.rar',
+        'Content-Type': ext === 'rar' ? 'application/vnd.rar' : 'application/zip',
         'Content-Length': String(bytes.byteLength),
         'Content-Disposition': `attachment; filename="${filename}"`,
         'Cache-Control': 'no-store',

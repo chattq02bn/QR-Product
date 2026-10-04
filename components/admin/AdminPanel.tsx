@@ -152,8 +152,8 @@ export default function AdminPanel() {
     setExporting(mode);
     const hideLoading = message.loading(
       mode === 'all'
-        ? `Đang tạo file .rar cho ${total} sản phẩm, vui lòng chờ...`
-        : `Đang tạo file .rar cho ${selectedCount} sản phẩm đã chọn...`,
+        ? `Đang tạo file nén cho ${total} sản phẩm, vui lòng chờ...`
+        : `Đang tạo file nén cho ${selectedCount} sản phẩm đã chọn...`,
       0,
     );
     try {
@@ -174,7 +174,7 @@ export default function AdminPanel() {
       const url = URL.createObjectURL(blob);
       const anchor = document.createElement('a');
       anchor.href = url;
-      anchor.download = readFilename(res.headers.get('Content-Disposition')) ?? 'ma-qr.rar';
+      anchor.download = readFilename(res.headers.get('Content-Disposition')) ?? 'ma-qr.zip';
       document.body.appendChild(anchor);
       anchor.click();
       anchor.remove();
@@ -231,8 +231,8 @@ export default function AdminPanel() {
                 loading={exporting !== null}
                 title={
                   selectedCount === 0
-                    ? 'Tải mã QR của tất cả sản phẩm (.rar)'
-                    : 'Tải mã QR (.rar): tất cả hoặc sản phẩm đã chọn'
+                    ? 'Tải mã QR của tất cả sản phẩm (.zip)'
+                    : 'Tải mã QR (.zip): tất cả hoặc sản phẩm đã chọn'
                 }
               >
                 Tải mã QR <DownOutlined />
