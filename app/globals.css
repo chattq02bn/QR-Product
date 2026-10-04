@@ -124,9 +124,9 @@ header.public-header .public-header__scan .ant-btn-icon {
 }
 
 .product-info__name {
-  margin: 0 0 6px;
-  font-size: 17px;
-  line-height: 1.4;
+  margin: 0 0 8px;
+  font-size: 22px;
+  line-height: 1.35;
   font-weight: 700;
   color: #10357a;
 }
@@ -148,21 +148,6 @@ header.public-header .public-header__scan .ant-btn-icon {
   line-height: 1.6;
   color: #555;
   white-space: pre-line;
-}
-
-.product-info__desc--clamped {
-  display: -webkit-box;
-  -webkit-line-clamp: 3;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
-.product-info__more.ant-btn {
-  height: auto;
-  margin-top: 4px;
-  padding: 0;
-  font-size: 14px;
-  line-height: 1.6;
 }
 
 .public-guides {
@@ -500,6 +485,10 @@ header.public-header .public-header__scan .ant-btn-icon {
 
 /* Mobile: thông tin sản phẩm xếp dọc, ảnh full width căn giữa */
 @media (max-width: 639px) {
+  .product-info__name {
+    font-size: 19px;
+  }
+
   .product-info__body {
     flex-direction: column;
     gap: 12px;

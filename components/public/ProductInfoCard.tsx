@@ -1,7 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
-import { Button, Image } from 'antd';
+import { Image } from 'antd';
 import { isValidHttpUrl } from '@/lib/format';
 import type { ProductView, SpecEntry } from '@/lib/types';
 
@@ -18,36 +17,10 @@ function findSpecValue(entries: SpecEntry[] | null, labels: string[]): string {
 }
 
 export default function ProductInfoCard({ product }: Props) {
-  const [expanded, setExpanded] = useState(false);
-  const [hasOverflow, setHasOverflow] = useState(false);
-  const descRef = useRef<HTMLParagraphElement | null>(null);
-  const expandedRef = useRef(false);
-
   const imageUrl = product.imageUrl?.trim() ?? '';
   const description = product.description?.trim() ?? '';
   const model = findSpecValue(product.specs, ['Model', 'Mô hình']);
   const brand = findSpecValue(product.specs, ['Nhãn hiệu', 'Thương hiệu', 'Brand']);
-
-  useEffect(() => {
-    expandedRef.current = expanded;
-  }, [expanded]);
-
-  useEffect(() => {
-    const element = descRef.current;
-    if (!element) return undefined;
-
-    const update = () => {
-      if (expandedRef.current) return;
-      setHasOverflow(element.scrollHeight > element.clientHeight + 1);
-    };
-
-    update();
-
-    if (typeof ResizeObserver === 'undefined') return undefined;
-    const observer = new ResizeObserver(update);
-    observer.observe(element);
-    return () => observer.disconnect();
-  }, [description]);
 
   const hasImage = isValidHttpUrl(imageUrl);
 
@@ -75,27 +48,7 @@ export default function ProductInfoCard({ product }: Props) {
             </p>
           )}
 
-          {description && (
-            <>
-              <p
-                ref={descRef}
-                className={`product-info__desc${expanded ? '' : ' product-info__desc--clamped'}`}
-              >
-                {description}
-              </p>
-
-              {hasOverflow && (
-                <Button
-                  type="link"
-                  size="small"
-                  className="product-info__more"
-                  onClick={() => setExpanded((value) => !value)}
-                >
-                  {expanded ? 'Thu gọn' : 'Xem thêm'}
-                </Button>
-              )}
-            </>
-          )}
+          {description && <p className="product-info__desc">{description}</p>}
         </div>
       </div>
     </section>
