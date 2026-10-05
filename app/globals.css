@@ -151,14 +151,14 @@ header.public-header .public-header__scan .ant-btn-icon {
 }
 
 .public-guides {
-  margin-bottom: 16px;
-  padding: 16px;
+  padding: 16px 0;
   background: #fff;
   border: 1px solid #e8edf7;
   border-radius: 14px;
   box-shadow: 0 1px 4px rgba(16, 53, 122, 0.06);
 }
 .public-guides__title {
+  padding: 0 16px;
   margin: 0 0 14px;
   font-size: 17px;
   line-height: 1.4;
@@ -182,7 +182,6 @@ header.public-header .public-header__scan .ant-btn-icon {
   height: auto;
   display: block;
   border: 1px solid #e8edf7;
-  border-radius: 10px;
 }
 
 /* Khối "Thông số kỹ thuật" và "Nhà sản xuất / Đơn vị phân phối" trên trang tra cứu */
@@ -468,10 +467,6 @@ header.public-header .public-header__scan .ant-btn-icon {
 
   .public-lookup {
     padding: 24px;
-  }
-
-  .public-guides {
-    padding: 20px;
   }
 
   .public-guides__title {
