@@ -46,7 +46,7 @@ type SeedProduct = {
 const PRODUCTS: SeedProduct[] = [
   {
     name: 'Quạt trần DC ECOFAN F5',
-    model: '',
+    model: 'OML-QT26-F51-YM',
     specs: [
       { label: 'Kích thước quạt trần', value: '56 inch / 1422mm' },
       { label: 'Quy cách động cơ', value: 'DC153 × 16mm' },
@@ -63,7 +63,7 @@ const PRODUCTS: SeedProduct[] = [
   },
   {
     name: 'Quạt trần DC ECOFAN F5',
-    model: '',
+    model: 'OML-QT26-F51-SJ',
     specs: [
       { label: 'Kích thước quạt trần', value: '56 inch / 1422mm' },
       { label: 'Quy cách động cơ', value: 'DC153 × 16mm' },
@@ -80,7 +80,7 @@ const PRODUCTS: SeedProduct[] = [
   },
   {
     name: 'Quạt trần DC ECOFAN F5',
-    model: '',
+    model: 'OML-QT26-F51-AB',
     specs: [
       { label: 'Kích thước quạt trần', value: '56” / 1422mm' },
       { label: 'Quy cách động cơ', value: 'DC153 × 16mm' },
@@ -97,7 +97,7 @@ const PRODUCTS: SeedProduct[] = [
   },
   {
     name: 'Quạt trần DC ECOFAN F5',
-    model: '',
+    model: 'OML-QT26-F50-YM',
     specs: [
       { label: 'Kích thước quạt trần', value: '56 inch / 1422mm' },
       { label: 'Quy cách động cơ', value: 'DC153 × 16mm' },
@@ -114,7 +114,7 @@ const PRODUCTS: SeedProduct[] = [
   },
   {
     name: 'Quạt trần DC ECOFAN F5',
-    model: '',
+    model: 'OML-QT26-F50-SJ',
     specs: [
       { label: 'Kích thước quạt trần', value: '56 inch / 1422mm' },
       { label: 'Quy cách động cơ', value: 'DC153 × 16mm' },
@@ -131,7 +131,7 @@ const PRODUCTS: SeedProduct[] = [
   },
   {
     name: 'Quạt trần DC ECOFAN F5',
-    model: '',
+    model: 'OML-QT26-F50-AB',
     specs: [
       { label: 'Kích thước quạt trần', value: '56” / 1422mm' },
       { label: 'Quy cách động cơ', value: 'DC153 × 16mm' },
@@ -148,7 +148,7 @@ const PRODUCTS: SeedProduct[] = [
   },
   {
     name: 'Quạt trần DC ECOFAN F5',
-    model: '',
+    model: 'OML-QT26-F51-60SJ',
     specs: [
       { label: 'Kích thước quạt trần', value: '60inch / 1524mm' },
       { label: 'Quy cách động cơ', value: 'DC153 × 20mm' },
@@ -165,7 +165,7 @@ const PRODUCTS: SeedProduct[] = [
   },
   {
     name: 'Quạt trần DC ECOFAN F5',
-    model: '',
+    model: 'OML-QT26-F51-60DK',
     specs: [
       { label: 'Kích thước quạt trần', value: '60inch / 1524mm' },
       { label: 'Quy cách động cơ', value: 'DC153 × 20mm' },
@@ -182,7 +182,7 @@ const PRODUCTS: SeedProduct[] = [
   },
   {
     name: 'Quạt trần DC ECOFAN F5',
-    model: '',
+    model: 'OML-QT26-F51-60YD',
     specs: [
       { label: 'Kích thước quạt trần', value: '60inch / 1524mm' },
       { label: 'Quy cách động cơ', value: 'DC153 × 20mm' },
@@ -199,7 +199,7 @@ const PRODUCTS: SeedProduct[] = [
   },
   {
     name: 'Quạt trần DC ECOFAN E8',
-    model: '',
+    model: 'OML-QT26-E8CAFE',
     specs: [
       { label: 'Kích thước quạt', value: '60 inch / 1524 mm' },
       { label: 'Động cơ', value: 'DC 153 × 20 mm' },
@@ -216,7 +216,7 @@ const PRODUCTS: SeedProduct[] = [
   },
   {
     name: 'Quạt trần DC ECOFAN E8',
-    model: '',
+    model: 'OML-QT26-E8S',
     specs: [
       { label: 'Kích thước quạt', value: '60 inch / 1524 mm' },
       { label: 'Động cơ', value: 'DC 153 × 20 mm' },
@@ -233,7 +233,7 @@ const PRODUCTS: SeedProduct[] = [
   },
   {
     name: 'Quạt trần DC ECOFAN S6',
-    model: '',
+    model: 'OML-QT26-S6-65DK',
     specs: [
       { label: 'Kích thước quạt', value: '66 inch / 1676 mm' },
       { label: 'Động cơ', value: 'DC153 × 16 mm' },
@@ -251,7 +251,7 @@ const PRODUCTS: SeedProduct[] = [
   },
   {
     name: 'Quạt trần DC ECOFAN S6',
-    model: '',
+    model: 'OML-QT26-S6-55DK',
     specs: [
       { label: 'Kích thước quạt', value: '54 inch / 1370 mm' },
       { label: 'Thông số động cơ', value: 'DC153 × 16 mm' },
@@ -268,7 +268,7 @@ const PRODUCTS: SeedProduct[] = [
   },
   {
     name: 'Quạt trần DC ECOFAN S6',
-    model: '',
+    model: 'OML-QT26-S6-167YH',
     specs: [
       { label: 'Kích thước quạt', value: '66 inch / 1676 mm' },
       { label: 'Động cơ', value: 'DC153 × 16 mm' },
@@ -286,7 +286,7 @@ const PRODUCTS: SeedProduct[] = [
   },
   {
     name: 'Quạt trần DC ECOFAN S6',
-    model: '',
+    model: 'OML-QT26-S6-137YH',
     specs: [
       { label: 'Kích thước quạt', value: '54 inch / 1370 mm' },
       { label: 'Thông số động cơ', value: 'DC153 × 16 mm' },
@@ -303,7 +303,7 @@ const PRODUCTS: SeedProduct[] = [
   },
   {
     name: 'Quạt trần DC ECOFAN S6',
-    model: '',
+    model: 'OML-QT26-S6-167SJ',
     specs: [
       { label: 'Kích thước quạt', value: '66 inch / 1676 mm' },
       { label: 'Động cơ', value: 'DC153 × 16 mm' },
@@ -321,7 +321,7 @@ const PRODUCTS: SeedProduct[] = [
   },
   {
     name: 'Quạt trần DC ECOFAN S6',
-    model: '',
+    model: 'OML-QT26-S6-137SJ',
     specs: [
       { label: 'Kích thước quạt', value: '54 inch / 1370 mm' },
       { label: 'Thông số động cơ', value: 'DC153 × 16 mm' },
@@ -357,7 +357,7 @@ async function resetData() {
 
 async function seedProducts() {
   for (const [index, item] of PRODUCTS.entries()) {
-    const slug = slugify(`${item.name} ${index + 1}`);
+    const slug = slugify(`${item.name} ${item.model}`);
     const product = await prisma.product.create({
       data: {
         name: item.name,
