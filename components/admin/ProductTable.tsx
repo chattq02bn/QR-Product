@@ -186,6 +186,12 @@ export default function ProductTable({
       render: (value: string) => <Typography.Text strong>{value}</Typography.Text>,
     },
     {
+      title: 'Mã sản phẩm',
+      dataIndex: 'productCode',
+      key: 'productCode',
+      width: 140,
+    },
+    {
       title: 'Ảnh sản phẩm',
       key: 'productImage',
       width: 110,
@@ -293,6 +299,11 @@ export default function ProductTable({
             styles={{ body: { display: 'flex', flexDirection: 'column', gap: 12 } }}
           >
             <div>
+              <Typography.Text type="secondary">Mã sản phẩm: </Typography.Text>
+              <Typography.Text code>{product.productCode}</Typography.Text>
+            </div>
+
+            <div>
               <Typography.Text type="secondary">Ảnh sản phẩm: </Typography.Text>
               <ProductImageCell product={product} />
             </div>
@@ -381,7 +392,7 @@ export default function ProductTable({
         preserveSelectedRowKeys: true,
         columnWidth: 48,
       }}
-      scroll={{ x: 1108 }}
+      scroll={{ x: 1248 }}
     />
   );
 }
