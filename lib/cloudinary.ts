@@ -1,4 +1,5 @@
 import { v2 as cloudinary, type UploadApiResponse } from 'cloudinary';
+import { prisma } from '@/lib/prisma';
 
 export type CloudinaryImage = { url: string; publicId: string };
 
@@ -75,4 +76,23 @@ export async function deleteImage(publicId: string): Promise<boolean> {
 /** Xóa nhiều ảnh, trả về số ảnh đã xóa được. */
 export async function deleteImages(publicIds: string[]): Promise<void> {
   await Promise.all(publicIds.filter(Boolean).map((id) => deleteImage(id)));
+}
+
+/**
+ * Xóa ảnh trên Cloudinary nhưng chỉ khi không còn sản phẩm nào khác dùng chung publicId.
+ * Sản phẩm tạo bằng "Tạo bản sao" dùng chung file ảnh với sản phẩm gốc, nên khi xóa
+ * sản phẩm gốc (hoặc bỏ 1 ảnh khỏi sản phẩm gốc) thì file ảnh vẫn phải giữ lại.
+ * Chỉ gọi sau khi các dòng ProductImage không còn tham chiếu nữa đã được xóa trong DB.
+ */
+export async function deleteImagesIfUnused(publicIds: string[]): Promise<void> {
+  const candidates = [...new Set(publicIds.filter(Boolean))];
+  if (candidates.length === 0) return;
+
+  const rows = await prisma.productImage.findMany({
+    where: { publicId: { in: candidates } },
+    select: { publicId: true },
+  });
+  const stillUsed = new Set(rows.map((row) => row.publicId));
+  const removable = candidates.filter((id) => !stillUsed.has(id));
+  if (removable.length > 0) await deleteImages(removable);
 }

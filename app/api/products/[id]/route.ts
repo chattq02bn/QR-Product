@@ -3,7 +3,7 @@ import type { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { fail, handleApiError, isP2002, isP2002On, ok, readJson } from '@/lib/api';
 import { toProductView } from '@/lib/serialize';
-import { deleteImages } from '@/lib/cloudinary';
+import { deleteImagesIfUnused } from '@/lib/cloudinary';
 import { updateProductSchema } from '@/lib/validators';
 import { requireAdmin } from '@/lib/session';
 
@@ -15,7 +15,7 @@ export async function GET(_req: NextRequest, { params }: Params) {
   try {
     const product = await prisma.product.findUnique({
       where: { id: params.id },
-      include: { images: { orderBy: { order: 'asc' } } },
+      include: { images: { orderBy: [{ kind: 'asc' }, { order: 'asc' }] } },
     });
     if (!product) return fail('Không tìm thấy sản phẩm', 404);
     return ok(toProductView(product));
@@ -56,8 +56,27 @@ export async function PUT(req: NextRequest, { params }: Params) {
       return fail('Mã sản phẩm đã tồn tại trên hệ thống', 409);
     }
 
+    // Ghép 2 danh sách ảnh từ form (ảnh sản phẩm + ảnh hướng dẫn) để so sánh với dữ liệu cũ.
+    // `order` đếm riêng trong từng loại ảnh.
+    const inputImages = [
+      ...input.productImages.map((image, index) => ({
+        id: image.id,
+        url: image.url,
+        publicId: image.publicId ?? '',
+        kind: 'product' as const,
+        index,
+      })),
+      ...input.guideImages.map((image, index) => ({
+        id: image.id,
+        url: image.url,
+        publicId: image.publicId ?? '',
+        kind: 'guide' as const,
+        index,
+      })),
+    ];
+
     const knownIds = new Set(existing.images.map((image) => image.id));
-    const keptIds = input.images
+    const keptIds = inputImages
       .map((image) => image.id)
       .filter((id): id is string => Boolean(id) && knownIds.has(id as string));
     const keptIdSet = new Set(keptIds);
@@ -68,20 +87,25 @@ export async function PUT(req: NextRequest, { params }: Params) {
         where: { productId: existing.id, id: { notIn: keptIds } },
       });
 
-      for (const [index, image] of input.images.entries()) {
-        const publicId = image.publicId ?? '';
+      for (const image of inputImages) {
         if (image.id && keptIdSet.has(image.id)) {
           await tx.productImage.update({
             where: { id: image.id },
-            data: { order: index, url: image.url, publicId },
+            data: {
+              order: image.index,
+              url: image.url,
+              publicId: image.publicId,
+              kind: image.kind,
+            },
           });
         } else {
           await tx.productImage.create({
             data: {
               productId: existing.id,
               url: image.url,
-              publicId,
-              order: index,
+              publicId: image.publicId,
+              order: image.index,
+              kind: image.kind,
             },
           });
         }
@@ -93,8 +117,6 @@ export async function PUT(req: NextRequest, { params }: Params) {
           name: input.name,
           slug: input.slug,
           productCode: input.productCode,
-          // undefined = không gửi lên -> giữ nguyên giá trị cũ
-          imageUrl: input.imageUrl === undefined ? existing.imageUrl : input.imageUrl,
           description: input.description === undefined ? existing.description : input.description,
           manufacturer:
             input.manufacturer === undefined ? existing.manufacturer : input.manufacturer,
@@ -110,17 +132,18 @@ export async function PUT(req: NextRequest, { params }: Params) {
           // undefined = không gửi lên -> giữ nguyên hạn cũ
           qrExpiresAt: input.qrExpiresAt === undefined ? existing.qrExpiresAt : input.qrExpiresAt,
         },
-        include: { images: { orderBy: { order: 'asc' } } },
+        include: { images: { orderBy: [{ kind: 'asc' }, { order: 'asc' }] } },
       });
     });
 
     // Ảnh bị bỏ khỏi form sẽ bị xóa trên Cloudinary sau khi lưu thành công
-    // (chỉ ảnh có publicId trên Cloudinary, ảnh chèn link bên ngoài thì bỏ qua)
+    // (chỉ ảnh có publicId trên Cloudinary, ảnh chèn link bên ngoài thì bỏ qua;
+    // ảnh còn được sản phẩm khác dùng chung thì giữ lại)
     const removable = removed
       .map((image) => image.publicId)
       .filter((publicId) => Boolean(publicId));
     if (removable.length > 0) {
-      await deleteImages(removable);
+      await deleteImagesIfUnused(removable);
     }
 
     return ok(toProductView(product));
@@ -147,7 +170,8 @@ export async function DELETE(_req: NextRequest, { params }: Params) {
     if (!product) return fail('Không tìm thấy sản phẩm', 404);
 
     await prisma.product.delete({ where: { id: product.id } });
-    await deleteImages(product.images.map((image) => image.publicId));
+    // Ảnh dùng chung với sản phẩm bản sao (hoặc sản phẩm khác) sẽ không bị xóa
+    await deleteImagesIfUnused(product.images.map((image) => image.publicId));
 
     return ok({ id: product.id });
   } catch (error) {

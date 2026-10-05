@@ -128,8 +128,12 @@ export default function AdminPanel() {
     openInNewTab(getLookupPath(getQrCode(product)));
   };
 
-  const handleSave = (payload: ProductPayload): Promise<ProductView> => {
-    if (editing) return updateMutation.mutateAsync({ id: editing.id, payload });
+  const handleSave = (
+    payload: ProductPayload,
+    options: { copy?: boolean } = {},
+  ): Promise<ProductView> => {
+    // Bản sao: đang mở modal sửa sản phẩm gốc nhưng phải tạo sản phẩm mới
+    if (editing && !options.copy) return updateMutation.mutateAsync({ id: editing.id, payload });
     return createMutation.mutateAsync(payload);
   };
 

@@ -370,11 +370,19 @@ async function seedProducts() {
         productCode: item.productCode,
         manufacturer: BRAND,
         description: item.description,
-        imageUrl: PRODUCT_IMAGE_URL,
         specs: buildSpecs(item),
         distributor: DISTRIBUTOR,
         images: {
-          create: GUIDE_IMAGE_URLS.map((url, order) => ({ url, publicId: '', order })),
+          create: [
+            // Ảnh sản phẩm (ảnh đầu tiên là ảnh đại diện ở trang tra cứu)
+            { url: PRODUCT_IMAGE_URL, publicId: '', order: 0, kind: 'product' },
+            ...GUIDE_IMAGE_URLS.map((url, order) => ({
+              url,
+              publicId: '',
+              order,
+              kind: 'guide',
+            })),
+          ],
         },
       },
     });

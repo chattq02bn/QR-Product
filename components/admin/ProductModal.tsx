@@ -7,7 +7,6 @@ import {
   Button,
   Divider,
   Form,
-  Image,
   Input,
   InputNumber,
   Modal,
@@ -18,7 +17,7 @@ import {
   Upload,
 } from 'antd';
 import type { RcFile, UploadFile, UploadProps } from 'antd/es/upload/interface';
-import { DeleteOutlined, LinkOutlined, PlusOutlined, UploadOutlined } from '@ant-design/icons';
+import { CopyOutlined, DeleteOutlined, LinkOutlined, PlusOutlined } from '@ant-design/icons';
 import { apiFetch } from '@/lib/client';
 import { isValidHttpUrl } from '@/lib/format';
 import { checkProductCode, uploadProductImage } from '@/lib/queries';
@@ -40,9 +39,18 @@ type ImageItem = {
   file?: RcFile;
 };
 
-type LocalProductImage = {
-  file: RcFile;
-  preview: string;
+/** Loại ảnh: "product" = ảnh sản phẩm, "guide" = ảnh hướng dẫn sử dụng. */
+type ImageKind = 'product' | 'guide';
+
+const IMAGE_KINDS: ImageKind[] = ['product', 'guide'];
+
+const EMPTY_IMAGE_ITEMS: Record<ImageKind, ImageItem[]> = { product: [], guide: [] };
+
+const IMAGE_KIND_LABEL: Record<ImageKind, string> = { product: 'sản phẩm', guide: 'hướng dẫn' };
+
+const IMAGE_KIND_TITLE: Record<ImageKind, string> = {
+  product: 'Ảnh sản phẩm',
+  guide: 'Ảnh hướng dẫn',
 };
 
 type ExpiryUnit = 'minute' | 'hour' | 'day';
@@ -55,7 +63,6 @@ type FormValues = {
   qrMode: ExpiryMode;
   qrDuration: number;
   qrUnit: ExpiryUnit;
-  imageUrl?: string;
   description?: string;
   manufacturer?: string;
   /** Thông số kỹ thuật: danh sách "tên trường - giá trị" lưu JSON. */
@@ -68,7 +75,11 @@ type Props = {
   open: boolean;
   product: ProductView | null;
   onClose: () => void;
-  onSave: (payload: ProductPayload) => Promise<ProductView>;
+  /**
+   * Lưu sản phẩm. `copy = true` khi đang tạo bản sao: modal đang hiển thị sản phẩm gốc
+   * nhưng phải tạo mới (POST) thay vì cập nhật sản phẩm đó.
+   */
+  onSave: (payload: ProductPayload, options: { copy: boolean }) => Promise<ProductView>;
 };
 
 const UNIT_MS: Record<ExpiryUnit, number> = {
@@ -98,14 +109,17 @@ function splitDuration(ms: number): { duration: number; unit: ExpiryUnit } {
   return { duration: Math.round((safe / UNIT_MS.day) * 10) / 10, unit: 'day' };
 }
 
-function toImageItems(product: ProductView): ImageItem[] {
-  return product.images.map((image) => ({
-    key: image.id,
-    id: image.id,
-    url: image.url,
-    publicId: image.publicId,
-    uploading: false,
-  }));
+/** Lấy ảnh của một loại (sản phẩm / hướng dẫn) từ dữ liệu sản phẩm. */
+function toImageItems(product: ProductView, kind: ImageKind): ImageItem[] {
+  return product.images
+    .filter((image) => image.kind === kind)
+    .map((image) => ({
+      key: image.id,
+      id: image.id,
+      url: image.url,
+      publicId: image.publicId,
+      uploading: false,
+    }));
 }
 
 const MAX_DESCRIPTION_WORDS = 500;
@@ -166,26 +180,27 @@ function collectEntries(rows: SpecEntry[] | undefined, section: string): Collect
 export default function ProductModal({ open, product, onClose, onSave }: Props) {
   const { message } = App.useApp();
   const [form] = Form.useForm<FormValues>();
-  const [items, setItems] = useState<ImageItem[]>([]);
+  const [imageItems, setImageItems] = useState<Record<ImageKind, ImageItem[]>>(EMPTY_IMAGE_ITEMS);
+  /** Ô dán link ảnh dùng chung cho cả 2 loại ảnh (sản phẩm / hướng dẫn). */
   const [linkText, setLinkText] = useState('');
   const [expiryTouched, setExpiryTouched] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [localProductImage, setLocalProductImage] = useState<LocalProductImage | null>(null);
   const dragKeyRef = useRef<string | null>(null);
   const [dragOverKey, setDragOverKey] = useState<string | null>(null);
   const blobUrlsRef = useRef<Set<string>>(new Set());
   /** Kết quả kiểm tra "mã sản phẩm đã tồn tại" theo từng mã, tránh gọi API lặp lại. */
   const codeCheckCacheRef = useRef<Map<string, boolean>>(new Map());
+  /** Mã sản phẩm của sản phẩm gốc khi đang tạo bản sao (null = không ở chế độ copy). */
+  const [copiedFrom, setCopiedFrom] = useState<string | null>(null);
+  const isCopy = copiedFrom !== null;
 
   const mode = Form.useWatch('qrMode', form) ?? 'permanent';
   const duration = Form.useWatch('qrDuration', form) ?? 1;
   const unit = Form.useWatch('qrUnit', form) ?? 'day';
-  const imageUrlValue = (Form.useWatch('imageUrl', form) ?? '') as string;
   const descriptionValue = (Form.useWatch('description', form) ?? '') as string;
   const descriptionWords = countWords(descriptionValue);
-  const uploadingCount = items.filter((item) => item.uploading).length;
-  const pendingCount = items.filter((item) => item.file && !item.id).length;
-  const isEditing = Boolean(product);
+  // Bản sao là đang tạo sản phẩm mới (không phải sửa sản phẩm gốc)
+  const isEditing = Boolean(product) && !isCopy;
 
   /** Thời điểm hết hạn sẽ được lưu (hiển thị cho admin xem trước). */
   const expiryPreview = useMemo(() => {
@@ -203,15 +218,15 @@ export default function ProductModal({ open, product, onClose, onSave }: Props) 
     form.resetFields();
     setExpiryTouched(false);
     setSaving(false);
+    setCopiedFrom(null);
     setDragOverKey(null);
     dragKeyRef.current = null;
-    setLocalProductImage(null);
     blobUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
     blobUrlsRef.current.clear();
     codeCheckCacheRef.current.clear();
 
     if (!open) {
-      setItems([]);
+      setImageItems(EMPTY_IMAGE_ITEMS);
       setLinkText('');
       return;
     }
@@ -222,7 +237,6 @@ export default function ProductModal({ open, product, onClose, onSave }: Props) 
     form.setFieldsValue({
       name: product?.name ?? '',
       productCode: product?.productCode ?? '',
-      imageUrl: product?.imageUrl ?? '',
       description: product?.description ?? '',
       manufacturer: product?.manufacturer ?? '',
       specs: toFormEntries(product?.specs, DEFAULT_SPEC_LABELS),
@@ -231,7 +245,14 @@ export default function ProductModal({ open, product, onClose, onSave }: Props) 
       qrDuration: split?.duration ?? 7,
       qrUnit: split?.unit ?? 'day',
     });
-    setItems(product ? toImageItems(product) : []);
+    setImageItems(
+      product
+        ? {
+            product: toImageItems(product, 'product'),
+            guide: toImageItems(product, 'guide'),
+          }
+        : EMPTY_IMAGE_ITEMS,
+    );
     setLinkText('');
   }, [open, product, form]);
 
@@ -249,123 +270,116 @@ export default function ProductModal({ open, product, onClose, onSave }: Props) 
     if (blobUrlsRef.current.delete(url)) URL.revokeObjectURL(url);
   };
 
-  const customRequest: UploadProps['customRequest'] = (options) => {
-    const { file, onSuccess: onOk, onError } = options;
-    const rcFile = file as RcFile;
+  /** Cập nhật danh sách ảnh của một loại, các loại ảnh còn lại giữ nguyên. */
+  const updateItems = (kind: ImageKind, updater: (prev: ImageItem[]) => ImageItem[]) =>
+    setImageItems((prev) => ({ ...prev, [kind]: updater(prev[kind]) }));
 
-    if (rcFile.size > MAX_IMAGE_BYTES) {
-      message.error(`Ảnh "${rcFile.name}" vượt quá 10MB`);
-      onError?.(new Error('File quá lớn'));
-      return;
-    }
+  const customRequest =
+    (kind: ImageKind): UploadProps['customRequest'] =>
+    (options) => {
+      const { file, onSuccess: onOk, onError } = options;
+      const rcFile = file as RcFile;
 
-    if (items.length >= MAX_IMAGES_PER_PRODUCT) {
-      message.error(`Tối đa ${MAX_IMAGES_PER_PRODUCT} ảnh cho một sản phẩm`);
-      onError?.(new Error('Vượt quá số ảnh cho phép'));
-      return;
-    }
+      if (rcFile.size > MAX_IMAGE_BYTES) {
+        message.error(`Ảnh "${rcFile.name}" vượt quá 10MB`);
+        onError?.(new Error('File quá lớn'));
+        return;
+      }
 
-    const url = URL.createObjectURL(rcFile);
-    rememberBlob(url);
-    setItems((prev) => [
-      ...prev,
-      { key: rcFile.uid, url, publicId: '', uploading: false, file: rcFile },
-    ]);
-    onOk?.({});
+      if (imageItems[kind].length >= MAX_IMAGES_PER_PRODUCT) {
+        message.error(`Tối đa ${MAX_IMAGES_PER_PRODUCT} ảnh ${IMAGE_KIND_LABEL[kind]}`);
+        onError?.(new Error('Vượt quá số ảnh cho phép'));
+        return;
+      }
+
+      const url = URL.createObjectURL(rcFile);
+      rememberBlob(url);
+      updateItems(kind, (prev) => [
+        ...prev,
+        { key: rcFile.uid, url, publicId: '', uploading: false, file: rcFile },
+      ]);
+      onOk?.({});
+    };
+
+  const handleChange =
+    (kind: ImageKind): UploadProps['onChange'] =>
+    (info) => {
+      if (info.file.status === 'removed') {
+        const key = info.file.uid;
+        updateItems(kind, (prev) => prev.filter((item) => item.key !== key));
+      }
+    };
+
+  const handleRemove =
+    (kind: ImageKind): UploadProps['onRemove'] =>
+    (file) => {
+      const removed = imageItems[kind].find((item) => item.key === file.uid);
+      if (removed) forgetBlob(removed.url);
+      if (removed?.publicId && !removed.id) {
+        void apiFetch(`/api/upload?publicId=${encodeURIComponent(removed.publicId)}`, {
+          method: 'DELETE',
+        }).catch(() => undefined);
+      }
+      return true;
+    };
+
+  const itemRender = (kind: ImageKind): UploadProps['itemRender'] => {
+    const renderItem: UploadProps['itemRender'] = (originNode, file) => (
+      <div
+        className={`upload-drag-item${dragOverKey === file.uid ? ' upload-drag-item--over' : ''}`}
+        draggable
+        title="Kéo để đổi thứ tự ảnh"
+        onDragStart={(event) => {
+          dragKeyRef.current = file.uid;
+          event.dataTransfer.effectAllowed = 'move';
+        }}
+        onDragEnter={() => setDragOverKey(file.uid)}
+        onDragOver={(event) => {
+          event.preventDefault();
+          event.dataTransfer.dropEffect = 'move';
+        }}
+        onDragLeave={() => setDragOverKey((prev) => (prev === file.uid ? null : prev))}
+        onDragEnd={() => {
+          dragKeyRef.current = null;
+          setDragOverKey(null);
+        }}
+        onDrop={(event) => {
+          event.preventDefault();
+          const from = dragKeyRef.current;
+          setDragOverKey(null);
+          dragKeyRef.current = null;
+          if (!from || from === file.uid) return;
+          updateItems(kind, (prev) => {
+            const fromIndex = prev.findIndex((item) => item.key === from);
+            const toIndex = prev.findIndex((item) => item.key === file.uid);
+            if (fromIndex < 0 || toIndex < 0) return prev;
+            const next = [...prev];
+            const [moved] = next.splice(fromIndex, 1);
+            if (!moved) return prev;
+            next.splice(toIndex, 0, moved);
+            return next;
+          });
+        }}
+      >
+        {originNode}
+      </div>
+    );
+
+    return renderItem;
   };
 
-  const handleChange: UploadProps['onChange'] = (info) => {
-    if (info.file.status === 'removed') {
-      const key = info.file.uid;
-      setItems((prev) => prev.filter((item) => item.key !== key));
-    }
-  };
+  const fileList = (kind: ImageKind): UploadFile[] =>
+    imageItems[kind].map((item) => ({
+      uid: item.key,
+      name: item.file?.name ?? (item.url ? (item.url.split('/').pop() ?? 'image') : 'image'),
+      status: item.uploading ? 'uploading' : 'done',
+      url: item.url || undefined,
+      percent: item.uploading ? 70 : 100,
+    }));
 
-  const handleRemove: UploadProps['onRemove'] = (file) => {
-    const removed = items.find((item) => item.key === file.uid);
-    if (removed) forgetBlob(removed.url);
-    if (removed?.publicId && !removed.id) {
-      void apiFetch(`/api/upload?publicId=${encodeURIComponent(removed.publicId)}`, {
-        method: 'DELETE',
-      }).catch(() => undefined);
-    }
-    return true;
-  };
-
-  const itemRender: UploadProps['itemRender'] = (originNode, file) => (
-    <div
-      className={`upload-drag-item${dragOverKey === file.uid ? ' upload-drag-item--over' : ''}`}
-      draggable
-      title="Kéo để đổi thứ tự ảnh"
-      onDragStart={(event) => {
-        dragKeyRef.current = file.uid;
-        event.dataTransfer.effectAllowed = 'move';
-      }}
-      onDragEnter={() => setDragOverKey(file.uid)}
-      onDragOver={(event) => {
-        event.preventDefault();
-        event.dataTransfer.dropEffect = 'move';
-      }}
-      onDragLeave={() => setDragOverKey((prev) => (prev === file.uid ? null : prev))}
-      onDragEnd={() => {
-        dragKeyRef.current = null;
-        setDragOverKey(null);
-      }}
-      onDrop={(event) => {
-        event.preventDefault();
-        const from = dragKeyRef.current;
-        setDragOverKey(null);
-        dragKeyRef.current = null;
-        if (!from || from === file.uid) return;
-        setItems((prev) => {
-          const fromIndex = prev.findIndex((item) => item.key === from);
-          const toIndex = prev.findIndex((item) => item.key === file.uid);
-          if (fromIndex < 0 || toIndex < 0) return prev;
-          const next = [...prev];
-          const [moved] = next.splice(fromIndex, 1);
-          if (!moved) return prev;
-          next.splice(toIndex, 0, moved);
-          return next;
-        });
-      }}
-    >
-      {originNode}
-    </div>
-  );
-
-  const fileList: UploadFile[] = items.map((item) => ({
-    uid: item.key,
-    name: item.file?.name ?? (item.url ? (item.url.split('/').pop() ?? 'image') : 'image'),
-    status: item.uploading ? 'uploading' : 'done',
-    url: item.url || undefined,
-    percent: item.uploading ? 70 : 100,
-  }));
-
-  const handleProductImageUpload: UploadProps['customRequest'] = (options) => {
-    const { file, onSuccess: onOk, onError } = options;
-    const rcFile = file as RcFile;
-
-    if (rcFile.size > MAX_IMAGE_BYTES) {
-      message.error(`Ảnh "${rcFile.name}" vượt quá 10MB`);
-      onError?.(new Error('File quá lớn'));
-      return;
-    }
-
-    if (localProductImage) forgetBlob(localProductImage.preview);
-    const preview = URL.createObjectURL(rcFile);
-    rememberBlob(preview);
-    setLocalProductImage({ file: rcFile, preview });
-    // Đã tải ảnh sản phẩm -> bỏ link cũ trong ô "Ảnh sản phẩm"
-    form.setFieldsValue({ imageUrl: '' });
-    onOk?.({});
-  };
-
-  const clearLocalProductImage = () => {
-    if (localProductImage) forgetBlob(localProductImage.preview);
-    setLocalProductImage(null);
-  };
-
-  const handleAddLinks = () => {
+  const handleAddLinks = (kind: ImageKind) => {
+    const label = IMAGE_KIND_LABEL[kind];
+    const current = imageItems[kind];
     const lines = linkText
       .split(/\r?\n/)
       .map((line) => line.trim())
@@ -384,11 +398,11 @@ export default function ProductModal({ open, product, onClose, onSave }: Props) 
         invalid.push(line);
         continue;
       }
-      if (items.some((item) => item.url === line) || added.some((item) => item.url === line)) {
+      if (current.some((item) => item.url === line) || added.some((item) => item.url === line)) {
         continue;
       }
       added.push({
-        key: `link-${Date.now()}-${added.length}`,
+        key: `link-${kind}-${Date.now()}-${added.length}`,
         url: line,
         publicId: '',
         uploading: false,
@@ -399,15 +413,15 @@ export default function ProductModal({ open, product, onClose, onSave }: Props) 
       message.error(`Link không hợp lệ: ${invalid.slice(0, 3).join(', ')}`);
     }
 
-    if (items.length + added.length > MAX_IMAGES_PER_PRODUCT) {
-      message.error(`Tối đa ${MAX_IMAGES_PER_PRODUCT} ảnh cho một sản phẩm`);
+    if (current.length + added.length > MAX_IMAGES_PER_PRODUCT) {
+      message.error(`Tối đa ${MAX_IMAGES_PER_PRODUCT} ảnh ${label}`);
       return;
     }
 
     if (added.length > 0) {
-      setItems((prev) => [...prev, ...added]);
+      updateItems(kind, (prev) => [...prev, ...added]);
       setLinkText('');
-      message.success(`Đã thêm ${added.length} ảnh từ link`);
+      message.success(`Đã thêm ${added.length} ảnh ${label} từ link`);
     }
   };
 
@@ -428,6 +442,46 @@ export default function ProductModal({ open, product, onClose, onSave }: Props) 
     }
   };
 
+  /**
+   * Tạo bản sao: sao chép toàn bộ thông tin (tên, mô tả, thông số, đơn vị, hạn QR,
+   * ảnh sản phẩm, toàn bộ ảnh hướng dẫn) từ sản phẩm đang mở, chỉ xóa mã sản phẩm
+   * để admin nhập mã mới. Sau đó bấm "Tạo sản phẩm" sẽ tạo 1 sản phẩm hoàn toàn mới.
+   */
+  const handleCopy = () => {
+    if (!product || saving) return;
+
+    setCopiedFrom(product.productCode || product.slug);
+    codeCheckCacheRef.current.clear();
+
+    const split = product.qrExpiresAt
+      ? splitDuration(new Date(product.qrExpiresAt).getTime() - Date.now())
+      : null;
+
+    form.setFieldsValue({
+      name: product.name,
+      productCode: '',
+      description: product.description ?? '',
+      manufacturer: product.manufacturer ?? '',
+      specs: toFormEntries(product.specs, DEFAULT_SPEC_LABELS),
+      distributor: toFormEntries(product.distributor, DEFAULT_DISTRIBUTOR_LABELS),
+      qrMode: split ? 'duration' : 'permanent',
+      qrDuration: split?.duration ?? 7,
+      qrUnit: split?.unit ?? 'day',
+    });
+    setImageItems({
+      product: toImageItems(product, 'product'),
+      guide: toImageItems(product, 'guide'),
+    });
+    setLinkText('');
+    setExpiryTouched(false);
+
+    message.success(`Đã copy thông tin từ mã ${product.productCode} — hãy nhập mã sản phẩm mới`);
+    window.setTimeout(() => {
+      form.focusField('productCode');
+      void form.validateFields(['productCode']).catch(() => undefined);
+    }, 0);
+  };
+
   const handleOk = async () => {
     let values: FormValues;
     try {
@@ -436,8 +490,13 @@ export default function ProductModal({ open, product, onClose, onSave }: Props) 
       return;
     }
 
-    const imageCount = items.filter((item) => item.url).length;
-    if (imageCount === 0) {
+    const validCount = (kind: ImageKind) =>
+      imageItems[kind].filter((item) => item.url && !item.url.startsWith('blob:')).length;
+    if (validCount('product') === 0) {
+      message.error('Sản phẩm bắt buộc phải có ít nhất 1 ảnh sản phẩm');
+      return;
+    }
+    if (validCount('guide') === 0) {
       message.error('Sản phẩm bắt buộc phải có ít nhất 1 ảnh hướng dẫn');
       return;
     }
@@ -457,7 +516,9 @@ export default function ProductModal({ open, product, onClose, onSave }: Props) 
       }
     }
 
-    const pendingItems = items.filter((item) => item.file && !item.id);
+    const pendingEntries = IMAGE_KINDS.flatMap((kind) =>
+      imageItems[kind].filter((item) => item.file && !item.id).map((item) => ({ kind, item })),
+    );
 
     const specsResult = collectEntries(values.specs, 'Thông số kỹ thuật');
     if (!specsResult.ok) {
@@ -474,85 +535,90 @@ export default function ProductModal({ open, product, onClose, onSave }: Props) 
     setSaving(true);
     try {
       const uploadedByKey = new Map<string, { url: string; publicId: string }>();
+      const uploadKey = (kind: ImageKind, key: string) => `${kind}::${key}`;
 
-      if (pendingItems.length > 0) {
-        setItems((prev) =>
-          prev.map((item) =>
-            pendingItems.some((pending) => pending.key === item.key)
-              ? { ...item, uploading: true }
-              : item,
-          ),
-        );
+      if (pendingEntries.length > 0) {
+        setImageItems((prev) => {
+          const next = { ...prev };
+          for (const kind of IMAGE_KINDS) {
+            next[kind] = next[kind].map((item) =>
+              pendingEntries.some(
+                (pending) => pending.kind === kind && pending.item.key === item.key,
+              )
+                ? { ...item, uploading: true }
+                : item,
+            );
+          }
+          return next;
+        });
 
         const results = await Promise.allSettled(
-          pendingItems.map((item) => uploadProductImage(item.file as RcFile)),
+          pendingEntries.map((entry) => uploadProductImage(entry.item.file as RcFile)),
         );
 
         const uploads = new Map<string, { url: string; publicId: string }>();
         results.forEach((result, index) => {
-          const pending = pendingItems[index];
+          const pending = pendingEntries[index];
           if (pending && result.status === 'fulfilled') {
-            uploads.set(pending.key, result.value);
+            uploads.set(uploadKey(pending.kind, pending.item.key), result.value);
           }
         });
 
-        setItems((prev) =>
-          prev.map((item) => {
-            const uploaded = uploads.get(item.key);
-            if (!uploaded) return { ...item, uploading: false };
-            return {
-              ...item,
-              url: uploaded.url,
-              publicId: uploaded.publicId,
-              file: undefined,
-              uploading: false,
-            };
-          }),
-        );
+        setImageItems((prev) => {
+          const next = { ...prev };
+          for (const kind of IMAGE_KINDS) {
+            next[kind] = next[kind].map((item) => {
+              const uploaded = uploads.get(uploadKey(kind, item.key));
+              if (!uploaded) return { ...item, uploading: false };
+              return {
+                ...item,
+                url: uploaded.url,
+                publicId: uploaded.publicId,
+                file: undefined,
+                uploading: false,
+              };
+            });
+          }
+          return next;
+        });
 
         const failed = results.find((result) => result.status === 'rejected');
         if (failed && failed.status === 'rejected') {
-          throw failed.reason instanceof Error
-            ? failed.reason
-            : new Error('Upload ảnh hướng dẫn thất bại');
+          throw failed.reason instanceof Error ? failed.reason : new Error('Upload ảnh thất bại');
         }
 
         uploads.forEach((value, key) => uploadedByKey.set(key, value));
       }
 
-      let imageUrl = values.imageUrl?.trim() || null;
-      if (localProductImage) {
-        const uploaded = await uploadProductImage(localProductImage.file);
-        imageUrl = uploaded.url;
-        form.setFieldsValue({ imageUrl: uploaded.url });
-        forgetBlob(localProductImage.preview);
-        setLocalProductImage(null);
-      }
-
-      const payload: ProductPayload = {
-        name: values.name.trim(),
-        productCode: values.productCode.trim(),
-        imageUrl,
-        description: values.description?.trim() || null,
-        manufacturer: values.manufacturer?.trim() || null,
-        specs: specsResult.entries,
-        distributor: distributorResult.entries,
-        qrExpiresAt,
-        images: items
+      const buildImages = (kind: ImageKind) =>
+        imageItems[kind]
           .map((item) => {
-            const uploaded = uploadedByKey.get(item.key);
+            const uploaded = uploadedByKey.get(uploadKey(kind, item.key));
             return {
               ...(item.id ? { id: item.id } : {}),
               url: uploaded?.url ?? item.url,
               publicId: uploaded?.publicId ?? item.publicId,
             };
           })
-          .filter((image) => Boolean(image.url) && !image.url.startsWith('blob:')),
-      };
-      // Chế độ sửa giữ nguyên mã tra cứu (không cho đổi slug trên form)
-      if (product) payload.slug = product.slug;
+          .filter((image) => Boolean(image.url) && !image.url.startsWith('blob:'));
 
-      await onSave(payload);
+      const payload: ProductPayload = {
+        name: values.name.trim(),
+        productCode: values.productCode.trim(),
+        description: values.description?.trim() || null,
+        manufacturer: values.manufacturer?.trim() || null,
+        specs: specsResult.entries,
+        distributor: distributorResult.entries,
+        qrExpiresAt,
+        // Ảnh sản phẩm: ảnh đầu tiên là ảnh đại diện ở trang tra cứu
+        productImages: buildImages('product'),
+        guideImages: buildImages('guide'),
+      };
+      // Chế độ sửa giữ nguyên mã tra cứu (không cho đổi slug trên form);
+      // bản sao là sản phẩm mới -> slug tự sinh từ tên sản phẩm
+      if (product && !isCopy) payload.slug = product.slug;
+
+      await onSave(payload, { copy: isCopy });
       codeCheckCacheRef.current.clear();
     } catch (error) {
       message.error(error instanceof Error ? error.message : 'Không lưu được sản phẩm');
@@ -614,18 +680,127 @@ export default function ProductModal({ open, product, onClose, onSave }: Props) 
     </Form.List>
   );
 
+  /** Khối upload ảnh cho một loại ảnh (ảnh sản phẩm / ảnh hướng dẫn). */
+  const renderImageGallery = (kind: ImageKind) => {
+    const title = IMAGE_KIND_TITLE[kind];
+    const list = imageItems[kind];
+    const uploading = list.filter((item) => item.uploading).length;
+    const pending = list.filter((item) => item.file && !item.id).length;
+
+    return (
+      <>
+        <Divider orientation="left" plain style={{ margin: '8px 0 16px' }}>
+          {title}
+        </Divider>
+
+        <Upload
+          listType="picture-card"
+          multiple
+          accept="image/*"
+          fileList={fileList(kind)}
+          maxCount={MAX_IMAGES_PER_PRODUCT}
+          customRequest={customRequest(kind)}
+          onChange={handleChange(kind)}
+          onRemove={handleRemove(kind)}
+          itemRender={itemRender(kind)}
+          disabled={saving}
+        >
+          {list.length >= MAX_IMAGES_PER_PRODUCT ? null : (
+            <div>
+              <PlusOutlined />
+              <div style={{ marginTop: 8, fontSize: 12 }}>Tải ảnh</div>
+            </div>
+          )}
+        </Upload>
+
+        {uploading > 0 && (
+          <Typography.Paragraph type="secondary" style={{ marginTop: 8, marginBottom: 0 }}>
+            Đang tải lên {uploading} ảnh...
+          </Typography.Paragraph>
+        )}
+
+        {pending > 0 && uploading === 0 && (
+          <Typography.Paragraph type="secondary" style={{ marginTop: 8, marginBottom: 0 }}>
+            {pending} ảnh local sẽ được tải lên Cloudinary khi bạn lưu.
+          </Typography.Paragraph>
+        )}
+
+        {list.length === 0 && (
+          <Alert
+            type="error"
+            showIcon
+            style={{ marginTop: 12 }}
+            message={`Bắt buộc phải có ít nhất 1 ${title.toLowerCase()} trước khi lưu.`}
+          />
+        )}
+      </>
+    );
+  };
+
+  /** Một ô dán link dùng chung, bên dưới là 2 nút gán link cho ảnh sản phẩm / ảnh hướng dẫn. */
+  const renderLinkBox = () => (
+    <Form.Item
+      style={{ marginTop: 16, marginBottom: 0 }}
+      extra={`Dán link ảnh có sẵn, mỗi dòng một link, rồi bấm nút gán vào loại ảnh cần thêm. Tối đa ${MAX_IMAGES_PER_PRODUCT} ảnh mỗi loại, mỗi ảnh tối đa 10MB.`}
+    >
+      <Typography.Text>Chèn link ảnh</Typography.Text>
+      <Input.TextArea
+        value={linkText}
+        onChange={(event) => setLinkText(event.target.value)}
+        rows={3}
+        style={{ marginTop: 6 }}
+        placeholder={
+          'https://example.com/anh-san-pham-1.jpg\nhttps://example.com/anh-huong-dan-1.jpg'
+        }
+        disabled={saving}
+      />
+      <Space wrap style={{ marginTop: 8 }}>
+        <Button icon={<LinkOutlined />} onClick={() => handleAddLinks('product')} disabled={saving}>
+          {`Thêm link ảnh ${IMAGE_KIND_LABEL.product}`}
+        </Button>
+        <Button icon={<LinkOutlined />} onClick={() => handleAddLinks('guide')} disabled={saving}>
+          {`Thêm link ảnh ${IMAGE_KIND_LABEL.guide}`}
+        </Button>
+      </Space>
+    </Form.Item>
+  );
+
   return (
     <Modal
       open={open}
-      title={isEditing ? 'Sửa sản phẩm' : 'Thêm sản phẩm'}
-      okText={isEditing ? 'Lưu thay đổi' : 'Tạo sản phẩm'}
-      cancelText="Hủy"
-      confirmLoading={saving}
-      okButtonProps={{
-        disabled: items.length === 0,
-        loading: saving,
-      }}
-      onOk={() => void handleOk()}
+      title={
+        isCopy
+          ? `Tạo sản phẩm (bản sao từ mã ${copiedFrom})`
+          : isEditing
+            ? 'Sửa sản phẩm'
+            : 'Thêm sản phẩm'
+      }
+      footer={
+        <Space wrap>
+          {product && !isCopy && (
+            <Button icon={<CopyOutlined />} onClick={handleCopy} disabled={saving}>
+              Tạo bản sao
+            </Button>
+          )}
+          <Button
+            onClick={() => {
+              if (saving) return;
+              onClose();
+            }}
+            disabled={saving}
+          >
+            Hủy
+          </Button>
+          <Button
+            type="primary"
+            onClick={() => void handleOk()}
+            loading={saving}
+            disabled={imageItems.product.length === 0 || imageItems.guide.length === 0}
+          >
+            {isEditing ? 'Lưu thay đổi' : 'Tạo sản phẩm'}
+          </Button>
+        </Space>
+      }
       onCancel={() => {
         if (saving) return;
         onClose();
@@ -644,88 +819,66 @@ export default function ProductModal({ open, product, onClose, onSave }: Props) 
         initialValues={{ qrMode: 'permanent', qrDuration: 7, qrUnit: 'day', productCode: '' }}
       >
         <div className="product-modal__grid">
-          <div className="product-modal__side">
-            <p className="product-modal__side-title">Thông tin sản phẩm</p>
+          <div className="product-modal__main">
+            <Form.Item
+              name="name"
+              label="Tên sản phẩm"
+              rules={[
+                { required: true, message: 'Vui lòng nhập tên sản phẩm' },
+                { min: 2, message: 'Tên sản phẩm phải có ít nhất 2 ký tự' },
+                { max: 200, message: 'Tên sản phẩm tối đa 200 ký tự' },
+              ]}
+              extra={
+                isEditing
+                  ? undefined
+                  : 'Mã tra cứu sẽ tự sinh từ tên sản phẩm (bỏ dấu, nối bằng dấu gạch ngang).'
+              }
+            >
+              <Input placeholder="Ví dụ: Quạt trần LEDTECH 5 cánh" allowClear />
+            </Form.Item>
 
-            <div className="product-image">
-              <div className="product-image__frame">
-                {localProductImage ? (
-                  <Image
-                    src={localProductImage.preview}
-                    alt="Ảnh sản phẩm"
-                    className="product-image__img"
-                    preview={{ mask: 'Xem ảnh' }}
-                  />
-                ) : isValidHttpUrl(imageUrlValue.trim()) ? (
-                  <Image
-                    src={imageUrlValue.trim()}
-                    alt="Ảnh sản phẩm"
-                    className="product-image__img"
-                    preview={{ mask: 'Xem ảnh' }}
-                  />
-                ) : (
-                  <span className="product-image__placeholder">Chưa có ảnh sản phẩm</span>
-                )}
-              </div>
-
-              <Upload
-                accept="image/*"
-                showUploadList={false}
-                customRequest={handleProductImageUpload}
-                disabled={saving}
-              >
-                <Button block icon={<UploadOutlined />} disabled={saving}>
-                  Tải ảnh sản phẩm
-                </Button>
-              </Upload>
-
-              {localProductImage && (
-                <Space size={4} wrap>
-                  <Typography.Text type="secondary" style={{ fontSize: 12 }}>
-                    Ảnh local — sẽ tải lên Cloudinary khi bạn bấm Lưu.
-                  </Typography.Text>
-                  <Button
-                    type="link"
-                    size="small"
-                    onClick={clearLocalProductImage}
-                    disabled={saving}
-                  >
-                    Bỏ chọn
-                  </Button>
-                </Space>
-              )}
-
-              <Form.Item
-                name="imageUrl"
-                label="Ảnh sản phẩm"
-                extra="Tải ảnh lên (lưu local, đẩy lên Cloudinary khi lưu) hoặc dán link ảnh có sẵn."
-                style={{ marginBottom: 0 }}
-                rules={[
-                  {
-                    validator: (_, value?: string) => {
-                      const trimmed = (value ?? '').trim();
-                      if (!trimmed) return Promise.resolve();
-                      return isValidHttpUrl(trimmed)
-                        ? Promise.resolve()
-                        : Promise.reject(new Error('Link ảnh sản phẩm không hợp lệ'));
-                    },
+            <Form.Item
+              name="productCode"
+              label="Mã sản phẩm"
+              required
+              validateTrigger="onBlur"
+              extra={
+                isCopy
+                  ? `Đang tạo bản sao từ mã ${copiedFrom} — hãy nhập mã sản phẩm mới (khác mã gốc).`
+                  : 'Mã in trên bao bì / báo giá, hiển thị ở trang tra cứu và khối thông số kỹ thuật.'
+              }
+              rules={[
+                {
+                  validator: async (_, value?: string) => {
+                    const trimmed = (value ?? '').trim();
+                    if (!trimmed) throw new Error('Vui lòng nhập mã sản phẩm');
+                    if (trimmed.length < 2 || trimmed.length > MAX_PRODUCT_CODE_LENGTH) {
+                      throw new Error(`Mã sản phẩm từ 2 đến ${MAX_PRODUCT_CODE_LENGTH} ký tự`);
+                    }
+                    if (!PRODUCT_CODE_PATTERN.test(trimmed)) {
+                      throw new Error('Mã sản phẩm chỉ gồm chữ, số, dấu cách và ký tự . - _');
+                    }
+                    // Mã không đổi so với ban đầu -> không cần kiểm tra lại (bản sao luôn kiểm tra)
+                    if (!isCopy && trimmed === (product?.productCode ?? '').trim()) return;
+                    if (await isProductCodeTaken(trimmed, isCopy ? undefined : product?.id)) {
+                      throw new Error('Mã sản phẩm đã tồn tại trên hệ thống');
+                    }
                   },
-                ]}
-              >
-                <Input
-                  prefix={<LinkOutlined />}
-                  placeholder="https://example.com/anh.jpg"
-                  allowClear
-                  disabled={saving}
-                />
-              </Form.Item>
-            </div>
+                },
+              ]}
+            >
+              <Input
+                placeholder="Ví dụ: OML-QT26-F51-YM"
+                maxLength={MAX_PRODUCT_CODE_LENGTH}
+                allowClear
+                disabled={saving}
+              />
+            </Form.Item>
 
             <Form.Item
               name="description"
               label="Mô tả sản phẩm"
               extra={`${descriptionWords} / ${MAX_DESCRIPTION_WORDS} từ`}
-              style={{ marginBottom: 0 }}
               rules={[
                 {
                   validator: (_, value?: string) =>
@@ -745,7 +898,6 @@ export default function ProductModal({ open, product, onClose, onSave }: Props) 
             <Form.Item
               name="manufacturer"
               label="Nhà sản xuất"
-              style={{ marginBottom: 0 }}
               rules={[
                 {
                   validator: (_, value?: string) => {
@@ -759,59 +911,6 @@ export default function ProductModal({ open, product, onClose, onSave }: Props) 
               ]}
             >
               <Input placeholder="Ví dụ: LEDTECH" allowClear disabled={saving} />
-            </Form.Item>
-          </div>
-
-          <div className="product-modal__main">
-            <Form.Item
-              name="name"
-              label="Tên sản phẩm"
-              rules={[
-                { required: true, message: 'Vui lòng nhập tên sản phẩm' },
-                { min: 2, message: 'Tên sản phẩm phải có ít nhất 2 ký tự' },
-                { max: 200, message: 'Tên sản phẩm tối đa 200 ký tự' },
-              ]}
-              extra={
-                product
-                  ? undefined
-                  : 'Mã tra cứu sẽ tự sinh từ tên sản phẩm (bỏ dấu, nối bằng dấu gạch ngang).'
-              }
-            >
-              <Input placeholder="Ví dụ: Quạt trần LEDTECH 5 cánh" allowClear />
-            </Form.Item>
-
-            <Form.Item
-              name="productCode"
-              label="Mã sản phẩm"
-              required
-              validateTrigger="onBlur"
-              extra="Mã in trên bao bì / báo giá, hiển thị ở trang tra cứu và khối thông số kỹ thuật."
-              rules={[
-                {
-                  validator: async (_, value?: string) => {
-                    const trimmed = (value ?? '').trim();
-                    if (!trimmed) throw new Error('Vui lòng nhập mã sản phẩm');
-                    if (trimmed.length < 2 || trimmed.length > MAX_PRODUCT_CODE_LENGTH) {
-                      throw new Error(`Mã sản phẩm từ 2 đến ${MAX_PRODUCT_CODE_LENGTH} ký tự`);
-                    }
-                    if (!PRODUCT_CODE_PATTERN.test(trimmed)) {
-                      throw new Error('Mã sản phẩm chỉ gồm chữ, số, dấu cách và ký tự . - _');
-                    }
-                    // Mã không đổi so với ban đầu -> không cần kiểm tra lại
-                    if (trimmed === (product?.productCode ?? '').trim()) return;
-                    if (await isProductCodeTaken(trimmed, product?.id)) {
-                      throw new Error('Mã sản phẩm đã tồn tại trên hệ thống');
-                    }
-                  },
-                },
-              ]}
-            >
-              <Input
-                placeholder="Ví dụ: OML-QT26-F51-YM"
-                maxLength={MAX_PRODUCT_CODE_LENGTH}
-                allowClear
-                disabled={saving}
-              />
             </Form.Item>
 
             <Form.Item
@@ -864,75 +963,9 @@ export default function ProductModal({ open, product, onClose, onSave }: Props) 
               </Space>
             </Form.Item>
 
-            <Divider orientation="left" plain style={{ margin: '8px 0 16px' }}>
-              Ảnh hướng dẫn
-            </Divider>
-
-            <Upload
-              listType="picture-card"
-              multiple
-              accept="image/*"
-              fileList={fileList}
-              maxCount={MAX_IMAGES_PER_PRODUCT}
-              customRequest={customRequest}
-              onChange={handleChange}
-              onRemove={handleRemove}
-              itemRender={itemRender}
-              disabled={saving}
-            >
-              {items.length >= MAX_IMAGES_PER_PRODUCT ? null : (
-                <div>
-                  <PlusOutlined />
-                  <div style={{ marginTop: 8, fontSize: 12 }}>Tải ảnh</div>
-                </div>
-              )}
-            </Upload>
-
-            {uploadingCount > 0 && (
-              <Typography.Paragraph type="secondary" style={{ marginTop: 8, marginBottom: 0 }}>
-                Đang tải lên {uploadingCount} ảnh...
-              </Typography.Paragraph>
-            )}
-
-            {pendingCount > 0 && uploadingCount === 0 && (
-              <Typography.Paragraph type="secondary" style={{ marginTop: 8, marginBottom: 0 }}>
-                {pendingCount} ảnh local sẽ được tải lên Cloudinary khi bạn lưu.
-              </Typography.Paragraph>
-            )}
-
-            <Form.Item
-              style={{ marginTop: 16, marginBottom: 0 }}
-              extra={`Hoặc dán link ảnh có sẵn, mỗi dòng một link. Tối đa ${MAX_IMAGES_PER_PRODUCT} ảnh, mỗi ảnh tối đa 10MB.`}
-            >
-              <Typography.Text>Chèn link ảnh</Typography.Text>
-              <Input.TextArea
-                value={linkText}
-                onChange={(event) => setLinkText(event.target.value)}
-                rows={3}
-                style={{ marginTop: 6 }}
-                placeholder={
-                  'https://example.com/huong-dan-1.jpg\nhttps://example.com/huong-dan-2.jpg'
-                }
-                disabled={saving}
-              />
-              <Button
-                icon={<LinkOutlined />}
-                onClick={handleAddLinks}
-                style={{ marginTop: 8 }}
-                disabled={saving}
-              >
-                Thêm link ảnh
-              </Button>
-            </Form.Item>
-
-            {items.length === 0 && (
-              <Alert
-                type="error"
-                showIcon
-                style={{ marginTop: 12 }}
-                message="Bắt buộc phải có ít nhất 1 ảnh hướng dẫn trước khi lưu."
-              />
-            )}
+            {renderImageGallery('product')}
+            {renderImageGallery('guide')}
+            {renderLinkBox()}
           </div>
         </div>
 

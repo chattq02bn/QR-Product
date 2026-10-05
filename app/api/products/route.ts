@@ -35,7 +35,7 @@ export async function GET(req: NextRequest) {
       prisma.product.count({ where }),
       prisma.product.findMany({
         where,
-        include: { images: { orderBy: { order: 'asc' } } },
+        include: { images: { orderBy: [{ kind: 'asc' }, { order: 'asc' }] } },
         orderBy: { createdAt: 'desc' },
         skip: (query.page - 1) * query.pageSize,
         take: query.pageSize,
@@ -79,21 +79,29 @@ export async function POST(req: NextRequest) {
         name: input.name,
         slug: slugify(slug) || slug,
         productCode: input.productCode,
-        imageUrl: input.imageUrl ?? null,
         description: input.description ?? null,
         manufacturer: input.manufacturer ?? null,
         specs: input.specs ?? [],
         distributor: input.distributor ?? [],
         qrExpiresAt: input.qrExpiresAt ?? null,
         images: {
-          create: input.images.map((image, index) => ({
-            url: image.url,
-            publicId: image.publicId ?? '',
-            order: index,
-          })),
+          create: [
+            ...input.productImages.map((image, index) => ({
+              url: image.url,
+              publicId: image.publicId ?? '',
+              order: index,
+              kind: 'product',
+            })),
+            ...input.guideImages.map((image, index) => ({
+              url: image.url,
+              publicId: image.publicId ?? '',
+              order: index,
+              kind: 'guide',
+            })),
+          ],
         },
       },
-      include: { images: { orderBy: { order: 'asc' } } },
+      include: { images: { orderBy: [{ kind: 'asc' }, { order: 'asc' }] } },
     });
 
     return NextResponse.json({ data: toProductView(product) }, { status: 201 });

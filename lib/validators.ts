@@ -54,12 +54,6 @@ export const manufacturerSchema = z
   .max(200, 'Nhà sản xuất tối đa 200 ký tự')
   .nullish();
 
-export const productImageUrlSchema = z
-  .string({ invalid_type_error: 'Ảnh sản phẩm không hợp lệ' })
-  .trim()
-  .url('Ảnh sản phẩm phải là link hợp lệ')
-  .nullish();
-
 /** Một dòng "tên trường - giá trị" trong JSON thông số / nhà sản xuất. */
 export const specEntrySchema = z.object({
   label: z
@@ -86,13 +80,26 @@ export const imageSchema = z.object({
   publicId: z.string().trim().optional().default(''),
 });
 
-export const imagesSchema = z
-  .array(imageSchema, {
-    required_error: 'Sản phẩm bắt buộc phải có ít nhất 1 ảnh hướng dẫn',
-    invalid_type_error: 'Danh sách ảnh không hợp lệ',
-  })
-  .min(1, 'Sản phẩm bắt buộc phải có ít nhất 1 ảnh hướng dẫn')
-  .max(MAX_IMAGES_PER_PRODUCT, `Tối đa ${MAX_IMAGES_PER_PRODUCT} ảnh`);
+/** Danh sách ảnh cùng loại (ảnh sản phẩm hoặc ảnh hướng dẫn): tối thiểu 1, tối đa theo quy định. */
+function imageListSchema(minMessage: string) {
+  return z
+    .array(imageSchema, {
+      required_error: minMessage,
+      invalid_type_error: 'Danh sách ảnh không hợp lệ',
+    })
+    .min(1, minMessage)
+    .max(MAX_IMAGES_PER_PRODUCT, `Tối đa ${MAX_IMAGES_PER_PRODUCT} ảnh`);
+}
+
+/** Ảnh sản phẩm: ảnh đầu tiên là ảnh đại diện hiển thị ở trang tra cứu. */
+export const productImagesSchema = imageListSchema(
+  'Sản phẩm bắt buộc phải có ít nhất 1 ảnh sản phẩm',
+);
+
+/** Ảnh hướng dẫn sử dụng. */
+export const guideImagesSchema = imageListSchema(
+  'Sản phẩm bắt buộc phải có ít nhất 1 ảnh hướng dẫn',
+);
 
 /** Thời điểm hết hạn mã QR: ISO string, null = vĩnh viễn, undefined = không đổi. */
 export const qrExpiresAtSchema = z
@@ -105,12 +112,12 @@ export const createProductSchema = z.object({
   name: nameSchema,
   slug: slugSchema.optional(),
   productCode: productCodeSchema,
-  imageUrl: productImageUrlSchema,
   description: descriptionSchema,
   manufacturer: manufacturerSchema,
   specs: specEntriesSchema,
   distributor: specEntriesSchema,
-  images: imagesSchema,
+  productImages: productImagesSchema,
+  guideImages: guideImagesSchema,
   qrExpiresAt: qrExpiresAtSchema,
 });
 
@@ -118,12 +125,12 @@ export const updateProductSchema = z.object({
   name: nameSchema,
   slug: slugSchema,
   productCode: productCodeSchema,
-  imageUrl: productImageUrlSchema,
   description: descriptionSchema,
   manufacturer: manufacturerSchema,
   specs: specEntriesSchema,
   distributor: specEntriesSchema,
-  images: imagesSchema,
+  productImages: productImagesSchema,
+  guideImages: guideImagesSchema,
   qrExpiresAt: qrExpiresAtSchema,
 });
 

@@ -13,8 +13,6 @@ model Product {
   slug         String         @unique
   /// Mã sản phẩm (in trên bao bì / báo giá). Bắt buộc, duy nhất: mỗi mã ứng với đúng 1 QR.
   productCode  String         @unique
-  /// Ảnh sản phẩm (upload lên Cloudinary hoặc chèn link ngoài). null = chưa có.
-  imageUrl     String?
   /// Mô tả sản phẩm, tối đa 500 từ.
   description  String?        @db.Text
   /// Nhà sản xuất.
@@ -35,10 +33,13 @@ model ProductImage {
   productId String
   url       String
   publicId  String
+  /// Thứ tự trong nhóm ảnh của mình (đếm từ 0).
   order     Int     @default(0)
+  /// Loại ảnh: "product" = ảnh sản phẩm, "guide" = ảnh hướng dẫn sử dụng.
+  kind      String  @default("guide")
   product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
 
-  @@index([productId])
+  @@index([productId, kind])
 }
 
 model Admin {

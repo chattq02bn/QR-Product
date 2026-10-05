@@ -26,6 +26,9 @@ export default function PublicContent({ code, product, loadError }: Props) {
   const [decoding, setDecoding] = useState(false);
   const [mounted, setMounted] = useState(false);
 
+  /** Ảnh hướng dẫn sử dụng (loại trừ ảnh sản phẩm). */
+  const guideImages = (product?.images ?? []).filter((image) => image.kind === 'guide');
+
   useEffect(() => {
     setMounted(true);
   }, []);
@@ -162,7 +165,7 @@ export default function PublicContent({ code, product, loadError }: Props) {
         <ProductInfoCard key={product.id} product={product} />
         <ProductSpecBlocks product={product} />
 
-        {product.images.length === 0 ? (
+        {guideImages.length === 0 ? (
           <Result
             status="info"
             title="Sản phẩm chưa có ảnh hướng dẫn"
@@ -174,7 +177,7 @@ export default function PublicContent({ code, product, loadError }: Props) {
 
             <div className="public-guides__list">
               <Image.PreviewGroup>
-                {product.images.map((image, index) => (
+                {guideImages.map((image, index) => (
                   <Image
                     key={image.id}
                     src={image.url}

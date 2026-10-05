@@ -33,9 +33,11 @@ const lookupProduct = cache(async (code: string): Promise<LookupResult> => {
   }
 });
 
-/** Ảnh chia sẻ: ảnh sản phẩm -> ảnh hướng dẫn đầu tiên -> ảnh mã QR (luôn có ảnh cho OGP). */
+/** Ảnh chia sẻ: ảnh sản phẩm đầu tiên -> ảnh hướng dẫn đầu tiên -> ảnh mã QR (luôn có ảnh cho OGP). */
 function pickShareImage(product: ProductView): string {
-  const candidates = [product.imageUrl?.trim() ?? '', product.images[0]?.url?.trim() ?? ''];
+  const productImage = product.images.find((image) => image.kind === 'product');
+  const guideImage = product.images.find((image) => image.kind === 'guide');
+  const candidates = [productImage?.url?.trim() ?? '', guideImage?.url?.trim() ?? ''];
   const absolute = candidates.find((url) => isValidHttpUrl(url));
   if (absolute) return absolute;
   const relative = candidates.find((url) => url.startsWith('/'));

@@ -46,21 +46,32 @@ type Props = {
   onDelete: (product: ProductView) => void;
 };
 
-const thumbnailStyle: CSSProperties = {
-  width: 44,
-  height: 44,
-  objectFit: 'cover',
-  borderRadius: 6,
-};
-
 const GUIDE_COLUMN_WIDTH = 180;
 const GUIDE_VISIBLE_COUNT = 3;
+/** Cột ảnh sản phẩm: hẹp hơn, hiển thị 1 ảnh trong khung nhìn và kéo ngang để xem tiếp. */
+const PRODUCT_COLUMN_WIDTH = 110;
+const PRODUCT_VISIBLE_COUNT = 3;
 const GUIDE_GAP = 6;
 
-function GuideImageSlider({ product }: { product: ProductView }) {
-  const images = product.images;
+/** Lọc ảnh theo loại: "product" = ảnh sản phẩm, "guide" = ảnh hướng dẫn. */
+function imagesOfKind(product: ProductView, kind: 'product' | 'guide'): ProductView['images'] {
+  return product.images.filter((image) => image.kind === kind);
+}
+
+/** Slider ảnh cuộn ngang (dùng cho cả ảnh sản phẩm lẫn ảnh hướng dẫn trong bảng/card). */
+function ImageSlider({
+  images,
+  alt,
+  columnWidth,
+  visibleCount,
+}: {
+  images: ProductView['images'];
+  alt: string;
+  columnWidth: number;
+  visibleCount: number;
+}) {
   const viewportRef = useRef<HTMLDivElement | null>(null);
-  const [viewportWidth, setViewportWidth] = useState(GUIDE_COLUMN_WIDTH);
+  const [viewportWidth, setViewportWidth] = useState(columnWidth);
   const [atStart, setAtStart] = useState(true);
   const [atEnd, setAtEnd] = useState(false);
 
@@ -91,8 +102,8 @@ function GuideImageSlider({ product }: { product: ProductView }) {
     return <Tag color="default">Chưa có ảnh</Tag>;
   }
 
-  const baseWidth = viewportWidth > 0 ? viewportWidth : GUIDE_COLUMN_WIDTH;
-  const cellWidth = (baseWidth - GUIDE_GAP * (GUIDE_VISIBLE_COUNT - 1)) / GUIDE_VISIBLE_COUNT;
+  const baseWidth = viewportWidth > 0 ? viewportWidth : columnWidth;
+  const cellWidth = (baseWidth - GUIDE_GAP * (visibleCount - 1)) / visibleCount;
   const step = cellWidth + GUIDE_GAP;
   const canPrev = !atStart;
   const canNext = !atEnd;
@@ -107,7 +118,7 @@ function GuideImageSlider({ product }: { product: ProductView }) {
         <div className="admin-img-slider__track">
           {images.map((image) => (
             <span key={image.id} className="admin-img-slider__cell" style={{ width: cellWidth }}>
-              <Image src={image.url} alt={`${product.name} - hướng dẫn`} />
+              <Image src={image.url} alt={alt} />
             </span>
           ))}
         </div>
@@ -140,17 +151,24 @@ function GuideImageSlider({ product }: { product: ProductView }) {
   );
 }
 
-function ProductImageCell({ product }: { product: ProductView }) {
-  if (!product.imageUrl) {
-    return <Tag color="default">Chưa có ảnh</Tag>;
-  }
+function GuideImageSlider({ product }: { product: ProductView }) {
   return (
-    <Image
-      src={product.imageUrl}
-      width={44}
-      height={44}
-      style={thumbnailStyle}
-      alt={product.name}
+    <ImageSlider
+      images={imagesOfKind(product, 'guide')}
+      alt={`${product.name} - hướng dẫn`}
+      columnWidth={GUIDE_COLUMN_WIDTH}
+      visibleCount={GUIDE_VISIBLE_COUNT}
+    />
+  );
+}
+
+function ProductImageCell({ product }: { product: ProductView }) {
+  return (
+    <ImageSlider
+      images={imagesOfKind(product, 'product')}
+      alt={`${product.name} - sản phẩm`}
+      columnWidth={PRODUCT_COLUMN_WIDTH}
+      visibleCount={PRODUCT_VISIBLE_COUNT}
     />
   );
 }
@@ -194,8 +212,8 @@ export default function ProductTable({
     {
       title: 'Ảnh sản phẩm',
       key: 'productImage',
-      width: 110,
-      align: 'center',
+      width: GUIDE_COLUMN_WIDTH,
+
       render: (_, product) => <ProductImageCell product={product} />,
     },
     {
