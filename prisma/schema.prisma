@@ -11,8 +11,8 @@ model Product {
   id           String         @id @default(cuid())
   name         String
   slug         String         @unique
-  /// Mã sản phẩm (in trên bao bì / báo giá). null = chưa có. Mỗi mã ứng với đúng 1 QR.
-  productCode  String?        @unique
+  /// Mã sản phẩm (in trên bao bì / báo giá). Bắt buộc, duy nhất: mỗi mã ứng với đúng 1 QR.
+  productCode  String         @unique
   /// Ảnh sản phẩm (upload lên Cloudinary hoặc chèn link ngoài). null = chưa có.
   imageUrl     String?
   /// Mô tả sản phẩm, tối đa 500 từ.
