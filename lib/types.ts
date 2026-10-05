@@ -16,6 +16,7 @@ export type ProductView = Omit<
   qrExpiresAt: string | null;
   /** Thông số kỹ thuật, null = chưa có dữ liệu. */
   specs: SpecEntry[] | null;
+  productCode: string | null;
   /** Nhà sản xuất / Đơn vị phân phối, null = chưa có dữ liệu. */
   distributor: SpecEntry[] | null;
   images: ProductImage[];

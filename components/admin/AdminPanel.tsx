@@ -12,7 +12,7 @@ import QrModal from '@/components/admin/QrModal';
 import AdminHeader from '@/components/admin/AdminHeader';
 import type { QrTarget } from '@/components/admin/QrModal';
 import { openInNewTab } from '@/lib/client';
-import { getLookupPath } from '@/lib/qr';
+import { getLookupPath, getQrCode } from '@/lib/qr';
 import {
   createProduct,
   deleteProduct,
@@ -83,7 +83,7 @@ export default function AdminPanel() {
       message.success('Đã tạo sản phẩm thành công');
       setModalOpen(false);
       setEditing(null);
-      setQrTarget({ name: saved.name, slug: saved.slug });
+      setQrTarget({ name: saved.name, code: getQrCode(saved) });
     },
   });
 
@@ -95,7 +95,7 @@ export default function AdminPanel() {
       message.success('Đã cập nhật sản phẩm');
       setModalOpen(false);
       setEditing(null);
-      setQrTarget({ name: saved.name, slug: saved.slug });
+      setQrTarget({ name: saved.name, code: getQrCode(saved) });
     },
   });
 
@@ -125,7 +125,7 @@ export default function AdminPanel() {
   };
 
   const handleView = (product: ProductView) => {
-    openInNewTab(getLookupPath(product.slug));
+    openInNewTab(getLookupPath(getQrCode(product)));
   };
 
   const handleSave = (payload: ProductPayload): Promise<ProductView> => {
@@ -165,7 +165,9 @@ export default function AdminPanel() {
       });
 
       if (!res.ok) {
-        const data = (await res.json().catch(() => null)) as { error?: { message?: string } } | null;
+        const data = (await res.json().catch(() => null)) as {
+          error?: { message?: string };
+        } | null;
         message.error(data?.error?.message ?? 'Không tạo được file mã QR, vui lòng thử lại');
         return;
       }
@@ -221,7 +223,7 @@ export default function AdminPanel() {
             Quản lý tra cứu sản phẩm
           </Typography.Title>
           <Space wrap>
-            <ProductSearch onSearch={handleSearch} />
+            <ProductSearch onSearch={handleSearch} placeholder="Tìm theo tên hoặc mã sản phẩm" />
             <Button icon={<ReloadOutlined />} onClick={refresh} loading={loading}>
               Tải lại
             </Button>
@@ -274,7 +276,7 @@ export default function AdminPanel() {
             setPageSize(nextPageSize);
           }}
           onView={handleView}
-          onQr={(product) => setQrTarget({ name: product.name, slug: product.slug })}
+          onQr={(product) => setQrTarget({ name: product.name, code: getQrCode(product) })}
           onEdit={handleEdit}
           onDelete={(product) => deleteMutation.mutate(product)}
         />

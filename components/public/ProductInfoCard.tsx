@@ -19,6 +19,7 @@ function findSpecValue(entries: SpecEntry[] | null, labels: string[]): string {
 export default function ProductInfoCard({ product }: Props) {
   const imageUrl = product.imageUrl?.trim() ?? '';
   const description = product.description?.trim() ?? '';
+  const productCode = product.productCode?.trim() ?? '';
   const model = findSpecValue(product.specs, ['Model', 'Mô hình']);
   const brand = findSpecValue(product.specs, ['Nhãn hiệu', 'Thương hiệu', 'Brand']);
 
@@ -35,6 +36,12 @@ export default function ProductInfoCard({ product }: Props) {
 
         <div className="product-info__meta">
           <p className="product-info__name">{product.name}</p>
+
+          {productCode && (
+            <p className="product-info__row">
+              <span className="product-info__label">Mã sản phẩm:</span> {productCode}
+            </p>
+          )}
 
           {model && (
             <p className="product-info__row">

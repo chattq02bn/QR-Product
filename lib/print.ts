@@ -12,10 +12,10 @@ function escapeHtml(value: string): string {
  * Mở cửa sổ in chỉ gồm tên sản phẩm + mã QR.
  * Trả về false nếu trình duyệt chặn cửa sổ bật lên.
  */
-export function printQr(options: { name: string; slug: string; size?: number }): boolean {
-  const { name, slug } = options;
-  const link = getLookupUrl(slug);
-  const qrUrl = `/api/qr/${encodeURIComponent(slug)}?size=${options.size ?? 512}`;
+export function printQr(options: { name: string; code: string; size?: number }): boolean {
+  const { name, code } = options;
+  const link = getLookupUrl(code);
+  const qrUrl = `/api/qr/${encodeURIComponent(code)}?size=${options.size ?? 512}`;
 
   const win = window.open('', '_blank', 'width=520,height=720');
   if (!win) return false;

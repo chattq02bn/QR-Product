@@ -48,6 +48,14 @@ export function isP2002(error: unknown): boolean {
   return isPrismaError(error) && error.code === 'P2002';
 }
 
+/** Lỗi vi phạm unique (P2002) của đúng cột `field` (ví dụ: "productCode"). */
+export function isP2002On(error: unknown, field: string): boolean {
+  if (!isP2002(error)) return false;
+  const target = (error as { meta?: { target?: unknown } }).meta?.target;
+  const text = Array.isArray(target) ? target.join(',') : typeof target === 'string' ? target : '';
+  return text.includes(field);
+}
+
 /** Đọc JSON body an toàn, ném lỗi 400 nếu không phải JSON hợp lệ. */
 export async function readJson(req: Request): Promise<unknown> {
   try {

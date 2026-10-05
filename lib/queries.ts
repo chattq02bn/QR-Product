@@ -40,6 +40,17 @@ export async function deleteProduct(id: string): Promise<{ id: string }> {
   return apiFetch<{ id: string }>(`/api/products/${id}`, { method: 'DELETE' });
 }
 
+/**
+ * Kiểm tra mã sản phẩm đã tồn tại trên hệ thống chưa.
+ * `excludeId`: id sản phẩm đang sửa (không tính chính nó).
+ */
+export async function checkProductCode(code: string, excludeId?: string): Promise<boolean> {
+  const query = new URLSearchParams({ code });
+  if (excludeId) query.set('id', excludeId);
+  const data = await apiFetch<{ exists: boolean }>(`/api/products/check-code?${query.toString()}`);
+  return data.exists;
+}
+
 export async function uploadProductImage(file: File): Promise<UploadedImage> {
   const uploadFile = await compressImageForUpload(file);
   const body = new FormData();

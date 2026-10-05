@@ -1,8 +1,8 @@
 import { cache } from 'react';
 import type { Metadata } from 'next';
 import type { ProductView } from '@/lib/types';
-import { prisma } from '@/lib/prisma';
 import { toProductView } from '@/lib/serialize';
+import { findProductByCode } from '@/lib/lookup';
 import { isValidHttpUrl } from '@/lib/format';
 import { getAppUrl, getLookupUrl } from '@/lib/qr';
 import PublicContent from '@/components/public/PublicContent';
@@ -25,10 +25,7 @@ type LookupResult = {
 
 const lookupProduct = cache(async (code: string): Promise<LookupResult> => {
   try {
-    const found = await prisma.product.findUnique({
-      where: { slug: code },
-      include: { images: { orderBy: { order: 'asc' } } },
-    });
+    const found = await findProductByCode(code);
     return { product: found ? toProductView(found) : null, loadError: false };
   } catch (error) {
     console.error('[lookup] lỗi truy vấn dữ liệu:', error);

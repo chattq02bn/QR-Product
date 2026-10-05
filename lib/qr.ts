@@ -5,17 +5,26 @@ export function getAppUrl(): string {
   return raw.replace(/\/+$/, '');
 }
 
-/** Đường dẫn tra cứu dạng "/?code=slug". */
-export function getLookupPath(slug: string): string {
-  return `/?code=${encodeURIComponent(slug)}`;
+/**
+ * Mã định danh dùng cho QR / link tra cứu.
+ * Ưu tiên mã sản phẩm (productCode) để QR không đổi khi xóa rồi tạo lại đúng mã đó;
+ * sản phẩm cũ chưa có mã thì dùng mã tra cứu (slug).
+ */
+export function getQrCode(product: { productCode?: string | null; slug: string }): string {
+  return product.productCode?.trim() || product.slug;
+}
+
+/** Đường dẫn tra cứu dạng "/?code=<mã>". */
+export function getLookupPath(code: string): string {
+  return `/?code=${encodeURIComponent(code)}`;
 }
 
 /** Link tra cứu đầy đủ, dùng trong mã QR và hiển thị cho người dùng. */
-export function getLookupUrl(slug: string): string {
-  return `${getAppUrl()}${getLookupPath(slug)}`;
+export function getLookupUrl(code: string): string {
+  return `${getAppUrl()}${getLookupPath(code)}`;
 }
 
 /** URL của ảnh mã QR do app tự sinh (dùng để nhúng <img>). */
-export function getQrImageUrl(slug: string, size = 512): string {
-  return `/api/qr/${encodeURIComponent(slug)}?size=${size}`;
+export function getQrImageUrl(code: string, size = 512): string {
+  return `/api/qr/${encodeURIComponent(code)}?size=${size}`;
 }

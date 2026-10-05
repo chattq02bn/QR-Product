@@ -8,7 +8,7 @@ import { getLookupPath, getLookupUrl } from '@/lib/qr';
 import { printQr } from '@/lib/print';
 import { saveImageToDevice } from '@/lib/save-image';
 
-export type QrTarget = { name: string; slug: string } | null;
+export type QrTarget = { name: string; code: string } | null;
 
 type Props = {
   target: QrTarget;
@@ -18,7 +18,7 @@ type Props = {
 export default function QrModal({ target, onClose }: Props) {
   const { message } = App.useApp();
   const [saving, setSaving] = useState(false);
-  const link = target ? getLookupUrl(target.slug) : '';
+  const link = target ? getLookupUrl(target.code) : '';
 
   const handleCopy = async () => {
     try {
@@ -31,7 +31,7 @@ export default function QrModal({ target, onClose }: Props) {
 
   const handlePrint = () => {
     if (!target) return;
-    const opened = printQr({ name: target.name, slug: target.slug });
+    const opened = printQr({ name: target.name, code: target.code });
     if (!opened) {
       message.warning('Trình duyệt đã chặn cửa sổ in, vui lòng cho phép popup');
     }
@@ -40,8 +40,8 @@ export default function QrModal({ target, onClose }: Props) {
   /** Tải PNG: iPhone/iPad lưu thẳng vào thư viện ảnh qua bảng chọn, Android tải về máy. */
   const handleDownloadPng = async () => {
     if (!target || saving) return;
-    const url = `/api/qr/${encodeURIComponent(target.slug)}?download=1`;
-    const filename = `ma-qr-${target.slug}.png`;
+    const url = `/api/qr/${encodeURIComponent(target.code)}?download=1`;
+    const filename = `ma-qr-${target.code}.png`;
 
     setSaving(true);
     try {
@@ -127,7 +127,7 @@ export default function QrModal({ target, onClose }: Props) {
               </Button>
               <Button
                 icon={<LinkOutlined />}
-                onClick={() => openInNewTab(getLookupPath(target.slug))}
+                onClick={() => openInNewTab(getLookupPath(target.code))}
               >
                 Mở trang tra cứu
               </Button>

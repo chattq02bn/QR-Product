@@ -7,6 +7,7 @@ import { fail, handleApiError, readJson } from '@/lib/api';
 import { createZip } from '@/lib/zip';
 import { prisma } from '@/lib/prisma';
 import { QR_PNG_SIZE, renderQrPng } from '@/lib/qr-png';
+import { getQrCode } from '@/lib/qr';
 import { qrExportSchema } from '@/lib/validators';
 
 export const dynamic = 'force-dynamic';
@@ -67,7 +68,7 @@ export async function POST(req: NextRequest) {
 
     const products = await prisma.product.findMany({
       where: body.all ? {} : { id: { in: body.ids } },
-      select: { id: true, slug: true },
+      select: { id: true, slug: true, productCode: true },
       orderBy: { slug: 'asc' },
     });
 
@@ -82,8 +83,10 @@ export async function POST(req: NextRequest) {
       const chunk = products.slice(i, i + CONCURRENCY);
       await Promise.all(
         chunk.map(async (product) => {
-          const buffer = await renderQrPng(product.slug, size);
-          files.push({ name: `${product.slug}.png`, data: buffer });
+          // QR và tên file lấy theo mã sản phẩm: 1 mã -> 1 hình QR, kể cả khi tạo lại
+          const code = getQrCode(product);
+          const buffer = await renderQrPng(code, size);
+          files.push({ name: `${code}.png`, data: buffer });
         }),
       );
     }

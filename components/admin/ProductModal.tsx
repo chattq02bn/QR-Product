@@ -21,9 +21,14 @@ import type { RcFile, UploadFile, UploadProps } from 'antd/es/upload/interface';
 import { DeleteOutlined, LinkOutlined, PlusOutlined, UploadOutlined } from '@ant-design/icons';
 import { apiFetch } from '@/lib/client';
 import { isValidHttpUrl } from '@/lib/format';
-import { uploadProductImage } from '@/lib/queries';
+import { checkProductCode, uploadProductImage } from '@/lib/queries';
 import type { ProductPayload } from '@/lib/queries';
-import { MAX_IMAGE_BYTES, MAX_IMAGES_PER_PRODUCT } from '@/lib/validators';
+import {
+  MAX_IMAGE_BYTES,
+  MAX_IMAGES_PER_PRODUCT,
+  MAX_PRODUCT_CODE_LENGTH,
+  PRODUCT_CODE_PATTERN,
+} from '@/lib/validators';
 import type { ProductView, SpecEntry } from '@/lib/types';
 
 type ImageItem = {
@@ -45,6 +50,8 @@ type ExpiryMode = 'permanent' | 'duration';
 
 type FormValues = {
   name: string;
+  /** Mã sản phẩm in trên bao bì / báo giá. */
+  productCode: string;
   qrMode: ExpiryMode;
   qrDuration: number;
   qrUnit: ExpiryUnit;
@@ -124,7 +131,10 @@ const DEFAULT_DISTRIBUTOR_LABELS = ['Tên đơn vị', 'Mã số thuế', 'Đị
  * Đưa dữ liệu JSON đã lưu về dạng dòng của Form.List.
  * Sản phẩm chưa có dữ liệu -> mở sẵn các dòng gợi ý, admin chỉ việc nhập giá trị.
  */
-function toFormEntries(entries: SpecEntry[] | null | undefined, fallbackLabels: string[]): SpecEntry[] {
+function toFormEntries(
+  entries: SpecEntry[] | null | undefined,
+  fallbackLabels: string[],
+): SpecEntry[] {
   if (entries && entries.length > 0) {
     return entries.map((entry) => ({ label: entry.label, value: entry.value }));
   }
@@ -134,10 +144,7 @@ function toFormEntries(entries: SpecEntry[] | null | undefined, fallbackLabels: 
 type CollectResult = { ok: true; entries: SpecEntry[] } | { ok: false; error: string };
 
 /** Bỏ dòng trống, bắt lỗi dòng có giá trị nhưng thiếu tên trường. */
-function collectEntries(
-  rows: SpecEntry[] | undefined,
-  section: string,
-): CollectResult {
+function collectEntries(rows: SpecEntry[] | undefined, section: string): CollectResult {
   const cleaned = (rows ?? [])
     .map((row) => ({
       label: (row?.label ?? '').trim(),
@@ -167,6 +174,8 @@ export default function ProductModal({ open, product, onClose, onSave }: Props) 
   const dragKeyRef = useRef<string | null>(null);
   const [dragOverKey, setDragOverKey] = useState<string | null>(null);
   const blobUrlsRef = useRef<Set<string>>(new Set());
+  /** Kết quả kiểm tra "mã sản phẩm đã tồn tại" theo từng mã, tránh gọi API lặp lại. */
+  const codeCheckCacheRef = useRef<Map<string, boolean>>(new Map());
 
   const mode = Form.useWatch('qrMode', form) ?? 'permanent';
   const duration = Form.useWatch('qrDuration', form) ?? 1;
@@ -199,6 +208,7 @@ export default function ProductModal({ open, product, onClose, onSave }: Props) 
     setLocalProductImage(null);
     blobUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
     blobUrlsRef.current.clear();
+    codeCheckCacheRef.current.clear();
 
     if (!open) {
       setItems([]);
@@ -211,6 +221,7 @@ export default function ProductModal({ open, product, onClose, onSave }: Props) 
       : null;
     form.setFieldsValue({
       name: product?.name ?? '',
+      productCode: product?.productCode ?? '',
       imageUrl: product?.imageUrl ?? '',
       description: product?.description ?? '',
       manufacturer: product?.manufacturer ?? '',
@@ -400,6 +411,23 @@ export default function ProductModal({ open, product, onClose, onSave }: Props) 
     }
   };
 
+  /**
+   * Kiểm tra mã sản phẩm đã tồn tại trên hệ thống hay chưa (không tính chính nó).
+   * Không kiểm tra được (mất kết nối...) thì cho qua: API vẫn chặn khi lưu.
+   */
+  const isProductCodeTaken = async (code: string, excludeId?: string): Promise<boolean> => {
+    const key = `${excludeId ?? ''}::${code.toLowerCase()}`;
+    const cached = codeCheckCacheRef.current.get(key);
+    if (cached !== undefined) return cached;
+    try {
+      const exists = await checkProductCode(code, excludeId);
+      codeCheckCacheRef.current.set(key, exists);
+      return exists;
+    } catch {
+      return false;
+    }
+  };
+
   const handleOk = async () => {
     let values: FormValues;
     try {
@@ -437,10 +465,7 @@ export default function ProductModal({ open, product, onClose, onSave }: Props) 
       return;
     }
 
-    const distributorResult = collectEntries(
-      values.distributor,
-      'Nhà sản xuất / Đơn vị phân phối',
-    );
+    const distributorResult = collectEntries(values.distributor, 'Nhà sản xuất / Đơn vị phân phối');
     if (!distributorResult.ok) {
       message.error(distributorResult.error);
       return;
@@ -506,6 +531,7 @@ export default function ProductModal({ open, product, onClose, onSave }: Props) 
 
       const payload: ProductPayload = {
         name: values.name.trim(),
+        productCode: values.productCode.trim(),
         imageUrl,
         description: values.description?.trim() || null,
         manufacturer: values.manufacturer?.trim() || null,
@@ -527,6 +553,7 @@ export default function ProductModal({ open, product, onClose, onSave }: Props) 
       if (product) payload.slug = product.slug;
 
       await onSave(payload);
+      codeCheckCacheRef.current.clear();
     } catch (error) {
       message.error(error instanceof Error ? error.message : 'Không lưu được sản phẩm');
     } finally {
@@ -614,7 +641,7 @@ export default function ProductModal({ open, product, onClose, onSave }: Props) 
         layout="vertical"
         onValuesChange={onValuesChange}
         autoComplete="off"
-        initialValues={{ qrMode: 'permanent', qrDuration: 7, qrUnit: 'day' }}
+        initialValues={{ qrMode: 'permanent', qrDuration: 7, qrUnit: 'day', productCode: '' }}
       >
         <div className="product-modal__grid">
           <div className="product-modal__side">
@@ -751,6 +778,40 @@ export default function ProductModal({ open, product, onClose, onSave }: Props) 
               }
             >
               <Input placeholder="Ví dụ: Quạt trần LEDTECH 5 cánh" allowClear />
+            </Form.Item>
+
+            <Form.Item
+              name="productCode"
+              label="Mã sản phẩm"
+              required
+              validateTrigger="onBlur"
+              extra="Mã in trên bao bì / báo giá, hiển thị ở trang tra cứu và khối thông số kỹ thuật."
+              rules={[
+                {
+                  validator: async (_, value?: string) => {
+                    const trimmed = (value ?? '').trim();
+                    if (!trimmed) throw new Error('Vui lòng nhập mã sản phẩm');
+                    if (trimmed.length < 2 || trimmed.length > MAX_PRODUCT_CODE_LENGTH) {
+                      throw new Error(`Mã sản phẩm từ 2 đến ${MAX_PRODUCT_CODE_LENGTH} ký tự`);
+                    }
+                    if (!PRODUCT_CODE_PATTERN.test(trimmed)) {
+                      throw new Error('Mã sản phẩm chỉ gồm chữ, số, dấu cách và ký tự . - _');
+                    }
+                    // Mã không đổi so với ban đầu -> không cần kiểm tra lại
+                    if (trimmed === (product?.productCode ?? '').trim()) return;
+                    if (await isProductCodeTaken(trimmed, product?.id)) {
+                      throw new Error('Mã sản phẩm đã tồn tại trên hệ thống');
+                    }
+                  },
+                },
+              ]}
+            >
+              <Input
+                placeholder="Ví dụ: OML-QT26-F51-YM"
+                maxLength={MAX_PRODUCT_CODE_LENGTH}
+                allowClear
+                disabled={saving}
+              />
             </Form.Item>
 
             <Form.Item

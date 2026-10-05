@@ -14,7 +14,11 @@ const BRAND = 'OML';
 const DISTRIBUTOR: SpecEntry[] = [
   { label: 'Tên đơn vị', value: 'Công ty TNHH Năng Lượng Xanh LEDTECH' },
   { label: 'Mã số thuế', value: '0110797973' },
-  { label: 'Địa chỉ', value: 'Số nhà 12, ngách 31/25, ngõ 25, tổ 37, đường Độc Lập, phường Long Biên, thành phố Hà Nội, Việt Nam' },
+  {
+    label: 'Địa chỉ',
+    value:
+      'Số nhà 12, ngách 31/25, ngõ 25, tổ 37, đường Độc Lập, phường Long Biên, thành phố Hà Nội, Việt Nam',
+  },
   { label: 'Điện thoại', value: '0982016699' },
   { label: 'Email', value: 'nangluongxanhledtech@gmail.com' },
 ];
@@ -41,8 +45,8 @@ type SeedProduct = {
 /** Dữ liệu lấy từ file báo giá QT_OML (sheet "BG QUAT TRAN"). */
 const PRODUCTS: SeedProduct[] = [
   {
-    name: 'QUẠT TRẦN DC ECOFAN F5',
-    model: 'OML-QT26-F51-YM',
+    name: 'Quạt trần DC ECOFAN F5',
+    model: '',
     specs: [
       { label: 'Kích thước quạt trần', value: '56 inch / 1422mm' },
       { label: 'Quy cách động cơ', value: 'DC153 × 16mm' },
@@ -52,15 +56,14 @@ const PRODUCTS: SeedProduct[] = [
       { label: 'Điện áp / Tần số', value: '220V–240V / 50Hz' },
       { label: 'Loại điều khiển', value: 'Remote 9 tốc độ' },
       { label: 'Kích thước ty treo', value: '26.5 × 170mm / 26.5 × 300mm' },
-      { label: 'Chất liệu chao đèn', value: 'Acrylic' },
       { label: 'Màu sản phẩm', value: 'Màu vàng gold + màu gỗ đậm' },
     ],
     description:
       'Quạt trần DC Ecofan F5 mang thiết kế sang trọng với sắc vàng gold kết hợp màu gỗ đậm, phù hợp nhiều phong cách nội thất. Động cơ DC 55W vận hành êm ái, tiết kiệm điện hơn, giúp tối ưu chi phí sử dụng lâu dài. 5 cánh ABS đường kính 56 inch tạo luồng gió mạnh và ổn định. Quạt tích hợp đèn LED 18W với 3 chế độ màu cùng remote 9 tốc độ, mang đến sự mát mẻ, tiện nghi và thoải mái cho không gian sống.',
   },
   {
-    name: 'QUẠT TRẦN DC ECOFAN F5',
-    model: 'OML-QT26-F51-SJ',
+    name: 'Quạt trần DC ECOFAN F5',
+    model: '',
     specs: [
       { label: 'Kích thước quạt trần', value: '56 inch / 1422mm' },
       { label: 'Quy cách động cơ', value: 'DC153 × 16mm' },
@@ -70,15 +73,14 @@ const PRODUCTS: SeedProduct[] = [
       { label: 'Điện áp / Tần số', value: '220V–240V / 50Hz' },
       { label: 'Loại điều khiển', value: 'Remote 9 tốc độ' },
       { label: 'Kích thước ty treo', value: '26.5 × 170mm / 26.5 × 300mm' },
-      { label: 'Chất liệu chao đèn', value: 'Acrylic' },
       { label: 'Màu sản phẩm', value: 'Toàn bộ màu vàng gold' },
     ],
     description:
       'Quạt trần DC Ecofan F5 sở hữu thiết kế sang trọng với màu vàng Gold nổi bật, tạo điểm nhấn tinh tế cho không gian sống. Động cơ DC 55W vận hành êm ái, tiết kiệm điện, giúp tối ưu chi phí sử dụng lâu dài. 5 cánh ABS đường kính 56 inch tạo luồng gió mạnh và ổn định. Tích hợp đèn LED 18W với 3 chế độ màu cùng remote 9 tốc độ, mang đến không gian mát mẻ, tiện nghi và thoải mái.',
   },
   {
-    name: 'QUẠT TRẦN DC ECOFAN F5',
-    model: 'OML-QT26-F51-AB',
+    name: 'Quạt trần DC ECOFAN F5',
+    model: '',
     specs: [
       { label: 'Kích thước quạt trần', value: '56” / 1422mm' },
       { label: 'Quy cách động cơ', value: 'DC153 × 16mm' },
@@ -88,15 +90,14 @@ const PRODUCTS: SeedProduct[] = [
       { label: 'Điện áp / Tần số', value: '220V–240V / 50Hz' },
       { label: 'Loại điều khiển', value: 'Remote 9 tốc độ' },
       { label: 'Kích thước ty treo', value: '26.5 × 170mm / 26.5 × 300mm' },
-      { label: 'Chất liệu chao đèn', value: 'Acrylic' },
       { label: 'Màu sản phẩm', value: 'Màu AB' },
     ],
     description:
       'Quạt trần DC Ecofan F5 sở hữu thiết kế hiện đại, tinh tế với màu AB sang trọng, dễ dàng tạo điểm nhấn cho không gian sống. Động cơ DC 55W vận hành êm ái, tiết kiệm điện, giúp tối ưu chi phí sử dụng lâu dài. 5 cánh ABS đường kính 56 inch tạo luồng gió mạnh và ổn định. Tích hợp đèn LED 18W với 3 chế độ màu cùng remote 9 tốc độ, mang đến không gian mát mẻ, tiện nghi và thoải mái.',
   },
   {
-    name: 'QUẠT TRẦN DC ECOFAN F5',
-    model: 'OML-QT26-F50-YM',
+    name: 'Quạt trần DC ECOFAN F5',
+    model: '',
     specs: [
       { label: 'Kích thước quạt trần', value: '56 inch / 1422mm' },
       { label: 'Quy cách động cơ', value: 'DC153 × 16mm' },
@@ -106,15 +107,14 @@ const PRODUCTS: SeedProduct[] = [
       { label: 'Điện áp / Tần số', value: '220V–240V / 50Hz' },
       { label: 'Loại điều khiển', value: 'Remote 9 tốc độ' },
       { label: 'Kích thước ty treo', value: '26.5 × 170mm / 26.5 × 300mm' },
-      { label: 'Chất liệu chao đèn', value: 'Không có' },
       { label: 'Màu sản phẩm', value: 'Màu vàng gold + màu gỗ đậm' },
     ],
     description:
       'Quạt trần DC Ecofan F5 mang thiết kế sang trọng với sự kết hợp tinh tế giữa màu vàng Gold và màu gỗ đậm, tạo điểm nhấn nổi bật cho không gian sống. Động cơ DC 55W vận hành êm ái, tiết kiệm điện, giúp tối ưu chi phí sử dụng lâu dài. 5 cánh ABS đường kính 56 inch tạo luồng gió mạnh và ổn định. Remote 9 tốc độ giúp dễ dàng điều chỉnh luồng gió theo nhu cầu, mang đến sự mát mẻ và thoải mái cho gia đình.',
   },
   {
-    name: 'QUẠT TRẦN DC ECOFAN F5',
-    model: 'OML-QT26-F50-SJ',
+    name: 'Quạt trần DC ECOFAN F5',
+    model: '',
     specs: [
       { label: 'Kích thước quạt trần', value: '56 inch / 1422mm' },
       { label: 'Quy cách động cơ', value: 'DC153 × 16mm' },
@@ -124,15 +124,14 @@ const PRODUCTS: SeedProduct[] = [
       { label: 'Điện áp / Tần số', value: '220V–240V / 50Hz' },
       { label: 'Loại điều khiển', value: 'Remote 9 tốc độ' },
       { label: 'Kích thước ty treo', value: '26.5 × 170mm / 26.5 × 300mm' },
-      { label: 'Chất liệu chao đèn', value: 'Không có' },
       { label: 'Màu sản phẩm', value: 'Toàn bộ màu vàng gold' },
     ],
     description:
       'Quạt trần DC Ecofan F5 nổi bật với thiết kế sang trọng, đồng bộ màu vàng Gold, mang đến vẻ đẹp hiện đại và tinh tế cho không gian sống. Động cơ DC 55W vận hành êm ái, tiết kiệm điện, giúp tối ưu chi phí sử dụng lâu dài. 5 cánh ABS đường kính 56 inch tạo luồng gió mạnh, ổn định. Remote 9 tốc độ giúp dễ dàng điều chỉnh theo nhu cầu, mang đến không gian mát mẻ, thoải mái và tiện nghi.',
   },
   {
-    name: 'QUẠT TRẦN DC ECOFAN F5',
-    model: 'OML-QT26-F50-AB',
+    name: 'Quạt trần DC ECOFAN F5',
+    model: '',
     specs: [
       { label: 'Kích thước quạt trần', value: '56” / 1422mm' },
       { label: 'Quy cách động cơ', value: 'DC153 × 16mm' },
@@ -142,15 +141,14 @@ const PRODUCTS: SeedProduct[] = [
       { label: 'Điện áp / Tần số', value: '220V–240V / 50Hz' },
       { label: 'Loại điều khiển', value: 'Remote 9 tốc độ' },
       { label: 'Kích thước ty treo', value: '26.5 × 170mm / 26.5 × 300mm' },
-      { label: 'Chất liệu chao đèn', value: 'Không có' },
       { label: 'Màu sản phẩm', value: 'Màu AB' },
     ],
     description:
       'Quạt trần DC Ecofan F5 mang thiết kế hiện đại, tinh tế với màu AB sang trọng, phù hợp với nhiều phong cách nội thất. Động cơ DC 55W vận hành êm ái, tiết kiệm điện, giúp giảm chi phí sử dụng lâu dài. 5 cánh ABS đường kính 56 inch tạo luồng gió mạnh và ổn định, mang lại cảm giác mát mẻ dễ chịu. Thiết kế không đèn tối giản, kết hợp remote 9 tốc độ, linh hoạt điều chỉnh theo nhu cầu.',
   },
   {
-    name: 'QUẠT TRẦN DC ECOFAN F5',
-    model: 'OML-QT26-F51-60SJ',
+    name: 'Quạt trần DC ECOFAN F5',
+    model: '',
     specs: [
       { label: 'Kích thước quạt trần', value: '60inch / 1524mm' },
       { label: 'Quy cách động cơ', value: 'DC153 × 20mm' },
@@ -160,15 +158,14 @@ const PRODUCTS: SeedProduct[] = [
       { label: 'Điện áp / Tần số', value: '220V–240V / 50Hz' },
       { label: 'Loại điều khiển', value: 'Remote 9 tốc độ' },
       { label: 'Kích thước ty treo', value: '26.5 × 148mm + ốp trần' },
-      { label: 'Chất liệu chao đèn', value: 'Acrylic' },
       { label: 'Màu sản phẩm', value: 'Toàn bộ màu vàng gold' },
     ],
     description:
       'Quạt trần 60 inch sở hữu thiết kế sang trọng, nổi bật với tông màu vàng Gold đồng bộ, tạo điểm nhấn tinh tế và đẳng cấp cho không gian sống. Động cơ DC 65W vận hành êm ái, tiết kiệm điện, giúp tối ưu chi phí sử dụng lâu dài. 5 cánh ABS đường kính 60 inch tạo luồng gió mạnh và ổn định. Tích hợp đèn LED 18W với 3 chế độ màu cùng remote 9 tốc độ, mang đến không gian mát mẻ, tiện nghi và thoải mái.',
   },
   {
-    name: 'QUẠT TRẦN DC ECOFAN F5',
-    model: 'OML-QT26-F51-60DK',
+    name: 'Quạt trần DC ECOFAN F5',
+    model: '',
     specs: [
       { label: 'Kích thước quạt trần', value: '60inch / 1524mm' },
       { label: 'Quy cách động cơ', value: 'DC153 × 20mm' },
@@ -178,15 +175,14 @@ const PRODUCTS: SeedProduct[] = [
       { label: 'Điện áp / Tần số', value: '220V–240V / 50Hz' },
       { label: 'Loại điều khiển', value: 'Remote 9 tốc độ' },
       { label: 'Kích thước ty treo', value: '26.5 × 148mm + ốp trần' },
-      { label: 'Chất liệu chao đèn', value: 'Acrylic' },
       { label: 'Màu sản phẩm', value: 'Toàn bộ màu nâu' },
     ],
     description:
       'Quạt trần 60 inch sở hữu thiết kế sang trọng, ấm áp với tông màu nâu đồng bộ, dễ dàng tạo điểm nhấn tinh tế cho không gian sống. Động cơ DC 65W vận hành êm ái, tiết kiệm điện, giúp tối ưu chi phí sử dụng lâu dài. 5 cánh ABS đường kính 60 inch tạo luồng gió mạnh và ổn định. Tích hợp đèn LED 18W với 3 chế độ màu cùng remote 9 tốc độ, mang đến không gian mát mẻ, tiện nghi và thoải mái.',
   },
   {
-    name: 'QUẠT TRẦN DC ECOFAN F5',
-    model: 'OML-QT26-F51-60YD',
+    name: 'Quạt trần DC ECOFAN F5',
+    model: '',
     specs: [
       { label: 'Kích thước quạt trần', value: '60inch / 1524mm' },
       { label: 'Quy cách động cơ', value: 'DC153 × 20mm' },
@@ -196,15 +192,14 @@ const PRODUCTS: SeedProduct[] = [
       { label: 'Điện áp / Tần số', value: '220V–240V / 50Hz' },
       { label: 'Loại điều khiển', value: 'Remote 9 tốc độ' },
       { label: 'Kích thước ty treo', value: '26.5 × 148mm + ốp trần' },
-      { label: 'Chất liệu chao đèn', value: 'Acrylic' },
       { label: 'Màu sản phẩm', value: 'Toàn bộ màu bạc' },
     ],
     description:
       'Quạt trần 60 inch sở hữu thiết kế hiện đại, thanh lịch với tông màu bạc đồng bộ, tạo vẻ sang trọng và tinh tế cho không gian sống. Động cơ DC 65W vận hành êm ái, tiết kiệm điện, giúp tối ưu chi phí sử dụng lâu dài. 5 cánh ABS đường kính 60 inch tạo luồng gió mạnh và ổn định. Tích hợp đèn LED 18W với 3 chế độ màu cùng remote 9 tốc độ, mang đến không gian mát mẻ, tiện nghi và thoải mái.',
   },
   {
-    name: 'QUẠT TRẦN DC ECOFAN E8',
-    model: 'OML-QT26-E8CAFE',
+    name: 'Quạt trần DC ECOFAN E8',
+    model: '',
     specs: [
       { label: 'Kích thước quạt', value: '60 inch / 1524 mm' },
       { label: 'Động cơ', value: 'DC 153 × 20 mm' },
@@ -220,8 +215,8 @@ const PRODUCTS: SeedProduct[] = [
       'Quạt trần 60 inch mang thiết kế sang trọng với gam vân gỗ đậm Walnut Dark Wood, tạo cảm giác ấm cúng và tinh tế cho không gian sống. Động cơ DC 65W vận hành êm ái, tiết kiệm điện, giúp tối ưu chi phí sử dụng lâu dài. 8 cánh ABS đường kính 60 inch tạo luồng gió mạnh và ổn định. Tích hợp đèn LED 24W với 3 chế độ màu cùng remote 9 cấp độ gió, mang đến sự mát mẻ, tiện nghi và thoải mái.',
   },
   {
-    name: 'QUẠT TRẦN DC ECOFAN E8',
-    model: 'OML-QT26-E8S',
+    name: 'Quạt trần DC ECOFAN E8',
+    model: '',
     specs: [
       { label: 'Kích thước quạt', value: '60 inch / 1524 mm' },
       { label: 'Động cơ', value: 'DC 153 × 20 mm' },
@@ -237,8 +232,8 @@ const PRODUCTS: SeedProduct[] = [
       'Quạt trần 60 inch sở hữu thiết kế hiện đại, thanh lịch với màu bạc tinh tế, dễ dàng kết hợp với nhiều phong cách nội thất. Động cơ DC 65W vận hành êm ái, tiết kiệm điện, giúp tối ưu chi phí sử dụng lâu dài. 8 cánh ABS đường kính 60 inch tạo luồng gió mạnh và ổn định. Tích hợp đèn LED 24W với 3 chế độ màu cùng remote 9 cấp độ gió, mang đến không gian mát mẻ, tiện nghi và thoải mái.',
   },
   {
-    name: 'QUẠT TRẦN DC ECOFAN S6',
-    model: 'OML-QT26-S6-65DK',
+    name: 'Quạt trần DC ECOFAN S6',
+    model: '',
     specs: [
       { label: 'Kích thước quạt', value: '66 inch / 1676 mm' },
       { label: 'Động cơ', value: 'DC153 × 16 mm' },
@@ -255,8 +250,8 @@ const PRODUCTS: SeedProduct[] = [
       'Quạt trần 66 inch sở hữu thiết kế hiện đại, mạnh mẽ với sự kết hợp tinh tế giữa đen mờ và màu gỗ đậm, tạo điểm nhấn sang trọng cho không gian sống. Động cơ DC 65W vận hành êm ái, tiết kiệm điện, giúp tối ưu chi phí sử dụng lâu dài. 6 cánh ABS đường kính lớn 66 inch tạo luồng gió mạnh và ổn định. Tích hợp đèn LED 25W với 3 chế độ màu cùng remote 6 cấp độ gió, mang đến không gian mát mẻ, tiện nghi và thoải mái.',
   },
   {
-    name: 'QUẠT TRẦN DC ECOFAN S6',
-    model: 'OML-QT26-S6-55DK',
+    name: 'Quạt trần DC ECOFAN S6',
+    model: '',
     specs: [
       { label: 'Kích thước quạt', value: '54 inch / 1370 mm' },
       { label: 'Thông số động cơ', value: 'DC153 × 16 mm' },
@@ -266,15 +261,14 @@ const PRODUCTS: SeedProduct[] = [
       { label: 'Điện áp', value: '220V – 240V / 50Hz' },
       { label: 'Điều khiển', value: 'Remote 9 cấp độ gió' },
       { label: 'Ty treo', value: '26.5 × 170 mm / 26.5 × 300 mm' },
-      { label: 'Chất liệu chụp đèn', value: 'Acrylic' },
       { label: 'Màu sắc tổng thể', value: 'Đen + màu gỗ đậm (Dark Wood)' },
     ],
     description:
       'Quạt trần DC Ecofan S6 mang thiết kế hiện đại, mạnh mẽ với sự kết hợp tinh tế giữa màu đen và màu gỗ đậm, tạo điểm nhấn sang trọng cho không gian sống. Động cơ DC 55W vận hành êm ái, tiết kiệm điện, giúp tối ưu chi phí sử dụng lâu dài. 6 cánh ABS đường kính 54 inch tạo luồng gió mạnh và ổn định. Tích hợp đèn LED 24W với 3 chế độ màu cùng remote 9 cấp độ gió, mang đến không gian mát mẻ, tiện nghi và thoải mái.',
   },
   {
-    name: 'QUẠT TRẦN DC ECOFAN S6',
-    model: 'OML-QT26-S6-167YH',
+    name: 'Quạt trần DC ECOFAN S6',
+    model: '',
     specs: [
       { label: 'Kích thước quạt', value: '66 inch / 1676 mm' },
       { label: 'Động cơ', value: 'DC153 × 16 mm' },
@@ -291,8 +285,8 @@ const PRODUCTS: SeedProduct[] = [
       'Quạt trần DC Ecofan S6 sở hữu thiết kế hiện đại, thanh lịch với màu bạc tinh tế, phù hợp với nhiều phong cách nội thất. Động cơ DC 55W vận hành êm ái, tiết kiệm điện, giúp tối ưu chi phí sử dụng lâu dài. 6 cánh ABS đường kính 54 inch tạo luồng gió mạnh và ổn định. Tích hợp đèn LED 24W với 3 chế độ màu cùng remote 9 cấp độ gió, mang đến không gian mát mẻ, thoải mái và tiện nghi.',
   },
   {
-    name: 'QUẠT TRẦN DC ECOFAN S6',
-    model: 'OML-QT26-S6-137YH',
+    name: 'Quạt trần DC ECOFAN S6',
+    model: '',
     specs: [
       { label: 'Kích thước quạt', value: '54 inch / 1370 mm' },
       { label: 'Thông số động cơ', value: 'DC153 × 16 mm' },
@@ -302,15 +296,14 @@ const PRODUCTS: SeedProduct[] = [
       { label: 'Điện áp', value: '220V – 240V / 50Hz' },
       { label: 'Điều khiển', value: 'Remote 9 cấp độ gió' },
       { label: 'Ty treo', value: '26.5 × 170 mm / 26.5 × 300 mm' },
-      { label: 'Chất liệu chụp đèn', value: 'Acrylic' },
       { label: 'Màu sắc', value: 'Màu bạc' },
     ],
     description:
       'Quạt trần DC Ecofan S6 sở hữu thiết kế hiện đại, thanh lịch với màu bạc tinh tế, phù hợp với nhiều phong cách nội thất. Động cơ DC 55W vận hành êm ái, tiết kiệm điện, giúp tối ưu chi phí sử dụng lâu dài. 6 cánh ABS đường kính 54 inch tạo luồng gió mạnh và ổn định. Tích hợp đèn LED 24W với 3 chế độ màu cùng remote 9 cấp độ gió, mang đến không gian mát mẻ, thoải mái và tiện nghi.',
   },
   {
-    name: 'QUẠT TRẦN DC ECOFAN S6',
-    model: 'OML-QT26-S6-167SJ',
+    name: 'Quạt trần DC ECOFAN S6',
+    model: '',
     specs: [
       { label: 'Kích thước quạt', value: '66 inch / 1676 mm' },
       { label: 'Động cơ', value: 'DC153 × 16 mm' },
@@ -327,8 +320,8 @@ const PRODUCTS: SeedProduct[] = [
       'Quạt trần DC Ecofan S6 nổi bật với thiết kế sang trọng, tinh tế cùng sắc vàng Gold, dễ dàng kết hợp với nhiều phong cách nội thất. Động cơ DC 55W vận hành êm ái, tiết kiệm điện, giúp tối ưu chi phí sử dụng lâu dài. 6 cánh ABS đường kính 54 inch tạo luồng gió mạnh và ổn định. Tích hợp đèn LED 24W với 3 chế độ màu cùng remote 9 cấp độ gió, mang đến không gian mát mẻ, thoải mái và tiện nghi.',
   },
   {
-    name: 'QUẠT TRẦN DC ECOFAN S6',
-    model: 'OML-QT26-S6-137SJ',
+    name: 'Quạt trần DC ECOFAN S6',
+    model: '',
     specs: [
       { label: 'Kích thước quạt', value: '54 inch / 1370 mm' },
       { label: 'Thông số động cơ', value: 'DC153 × 16 mm' },
@@ -338,7 +331,6 @@ const PRODUCTS: SeedProduct[] = [
       { label: 'Điện áp', value: '220V – 240V / 50Hz' },
       { label: 'Điều khiển', value: 'Remote 9 cấp độ gió' },
       { label: 'Ty treo', value: '26.5 × 170 mm / 26.5 × 300 mm' },
-      { label: 'Chất liệu chụp đèn', value: 'Acrylic' },
       { label: 'Màu sắc tổng thể', value: 'Màu vàng Gold' },
     ],
     description:
@@ -365,11 +357,12 @@ async function resetData() {
 
 async function seedProducts() {
   for (const [index, item] of PRODUCTS.entries()) {
-    const slug = slugify(`${item.name} ${item.model}`);
+    const slug = slugify(`${item.name} ${index + 1}`);
     const product = await prisma.product.create({
       data: {
         name: item.name,
         slug,
+        productCode: item.model,
         manufacturer: BRAND,
         description: item.description,
         imageUrl: PRODUCT_IMAGE_URL,

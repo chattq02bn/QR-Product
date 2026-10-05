@@ -25,7 +25,7 @@ import {
   RightOutlined,
 } from '@ant-design/icons';
 import { openInNewTab } from '@/lib/client';
-import { getLookupPath, getLookupUrl } from '@/lib/qr';
+import { getLookupPath, getLookupUrl, getQrCode } from '@/lib/qr';
 import { EXPIRY_COLORS, describeExpiry } from '@/lib/format';
 import type { ProductView } from '@/lib/types';
 
@@ -212,7 +212,7 @@ export default function ProductTable({
           onClick={() => onQr(product)}
         >
           <QRCode
-            value={getLookupUrl(product.slug)}
+            value={getLookupUrl(getQrCode(product))}
             size={80}
             bordered
             color="#10357a"
@@ -314,7 +314,7 @@ export default function ProductTable({
                 onClick={() => onQr(product)}
               >
                 <QRCode
-                  value={getLookupUrl(product.slug)}
+                  value={getLookupUrl(getQrCode(product))}
                   size={72}
                   bordered
                   color="#10357a"

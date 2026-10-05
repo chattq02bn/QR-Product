@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import type { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
-import { fail, handleApiError, isP2002, ok, readJson } from '@/lib/api';
+import { fail, handleApiError, isP2002, isP2002On, ok, readJson } from '@/lib/api';
 import { toProductView } from '@/lib/serialize';
 import { deleteImages } from '@/lib/cloudinary';
 import { updateProductSchema } from '@/lib/validators';
@@ -45,6 +45,17 @@ export async function PUT(req: NextRequest, { params }: Params) {
       return fail('Mã tra cứu đã tồn tại, vui lòng chọn mã khác', 409);
     }
 
+    const duplicateCode = await prisma.product.findFirst({
+      where: {
+        productCode: { equals: input.productCode, mode: 'insensitive' },
+        id: { not: existing.id },
+      },
+      select: { id: true },
+    });
+    if (duplicateCode) {
+      return fail('Mã sản phẩm đã tồn tại trên hệ thống', 409);
+    }
+
     const knownIds = new Set(existing.images.map((image) => image.id));
     const keptIds = input.images
       .map((image) => image.id)
@@ -81,6 +92,7 @@ export async function PUT(req: NextRequest, { params }: Params) {
         data: {
           name: input.name,
           slug: input.slug,
+          productCode: input.productCode,
           // undefined = không gửi lên -> giữ nguyên giá trị cũ
           imageUrl: input.imageUrl === undefined ? existing.imageUrl : input.imageUrl,
           description: input.description === undefined ? existing.description : input.description,
@@ -113,6 +125,9 @@ export async function PUT(req: NextRequest, { params }: Params) {
 
     return ok(toProductView(product));
   } catch (error) {
+    if (isP2002On(error, 'productCode')) {
+      return fail('Mã sản phẩm đã tồn tại trên hệ thống', 409);
+    }
     if (isP2002(error)) {
       return fail('Mã tra cứu đã tồn tại, vui lòng chọn mã khác', 409);
     }

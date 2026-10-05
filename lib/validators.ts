@@ -17,6 +17,18 @@ export const slugSchema = z
   .max(120, 'Mã tra cứu tối đa 120 ký tự')
   .regex(SLUG_PATTERN, 'Mã tra cứu chỉ gồm chữ thường, số và dấu gạch ngang');
 
+/** Mã sản phẩm in trên bao bì / báo giá: chữ, số và một số ký tự phân cách. */
+export const PRODUCT_CODE_PATTERN = /^[A-Za-z0-9][A-Za-z0-9 ._-]*$/;
+
+export const MAX_PRODUCT_CODE_LENGTH = 60;
+
+export const productCodeSchema = z
+  .string({ required_error: 'Mã sản phẩm là bắt buộc' })
+  .trim()
+  .min(2, 'Mã sản phẩm phải có ít nhất 2 ký tự')
+  .max(MAX_PRODUCT_CODE_LENGTH, `Mã sản phẩm tối đa ${MAX_PRODUCT_CODE_LENGTH} ký tự`)
+  .regex(PRODUCT_CODE_PATTERN, 'Mã sản phẩm chỉ gồm chữ, số, dấu cách và ký tự . - _');
+
 export const MAX_DESCRIPTION_WORDS = 500;
 
 const countWords = (value: string) => value.split(/\s+/).filter(Boolean).length;
@@ -92,6 +104,7 @@ export const qrExpiresAtSchema = z
 export const createProductSchema = z.object({
   name: nameSchema,
   slug: slugSchema.optional(),
+  productCode: productCodeSchema,
   imageUrl: productImageUrlSchema,
   description: descriptionSchema,
   manufacturer: manufacturerSchema,
@@ -104,6 +117,7 @@ export const createProductSchema = z.object({
 export const updateProductSchema = z.object({
   name: nameSchema,
   slug: slugSchema,
+  productCode: productCodeSchema,
   imageUrl: productImageUrlSchema,
   description: descriptionSchema,
   manufacturer: manufacturerSchema,

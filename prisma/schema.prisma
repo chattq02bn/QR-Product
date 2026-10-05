@@ -8,24 +8,26 @@ datasource db {
 }
 
 model Product {
-  id        String        @id @default(cuid())
-  name      String
-  slug      String        @unique
+  id           String         @id @default(cuid())
+  name         String
+  slug         String         @unique
+  /// Mã sản phẩm (in trên bao bì / báo giá). null = chưa có. Mỗi mã ứng với đúng 1 QR.
+  productCode  String?        @unique
   /// Ảnh sản phẩm (upload lên Cloudinary hoặc chèn link ngoài). null = chưa có.
-  imageUrl      String?
+  imageUrl     String?
   /// Mô tả sản phẩm, tối đa 500 từ.
-  description   String?   @db.Text
+  description  String?        @db.Text
   /// Nhà sản xuất.
-  manufacturer  String?
+  manufacturer String?
   /// Thông số kỹ thuật (JSON dạng [{ "label": "Tên sản phẩm", "value": "..." }]).
-  specs         Json?
+  specs        Json?
   /// Nhà sản xuất / Đơn vị phân phối (JSON dạng [{ "label": "Tên đơn vị", "value": "..." }]).
-  distributor   Json?
+  distributor  Json?
   /// Thời điểm hết hạn mã QR. null = dùng vĩnh viễn.
-  qrExpiresAt DateTime?
-  createdAt DateTime      @default(now())
-  updatedAt DateTime      @updatedAt
-  images    ProductImage[]
+  qrExpiresAt  DateTime?
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  images       ProductImage[]
 }
 
 model ProductImage {

@@ -100,13 +100,13 @@ header.public-header .public-header__scan .ant-btn-icon {
 
 .product-info__media {
   flex: none;
-  width: 160px;
+  width: 220px;
 }
 
 .product-info__media .ant-image {
   display: block;
-  width: 160px;
-  height: 160px;
+  width: 220px;
+  height: 180px;
   overflow: hidden;
   border: 1px solid #e8edf7;
   border-radius: 10px;
@@ -115,7 +115,7 @@ header.public-header .public-header__scan .ant-btn-icon {
 .product-info__media .ant-image img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: fill;
 }
 
 .product-info__meta {
@@ -137,6 +137,7 @@ header.public-header .public-header__scan .ant-btn-icon {
   line-height: 1.5;
   color: #444;
 }
+
 .product-info__label {
   font-weight: 700;
   color: #1f1f1f;
@@ -157,6 +158,7 @@ header.public-header .public-header__scan .ant-btn-icon {
   border-radius: 14px;
   box-shadow: 0 1px 4px rgba(16, 53, 122, 0.06);
 }
+
 .public-guides__title {
   padding: 0 16px;
   margin: 0 0 14px;
@@ -426,6 +428,7 @@ header.public-header .public-header__scan .ant-btn-icon {
 }
 
 @keyframes qr-scan-line {
+
   0%,
   100% {
     top: 6%;
@@ -513,7 +516,7 @@ header.public-header .public-header__scan .ant-btn-icon {
     height: auto;
     min-width: 100%;
     min-height: 240px;
-    object-fit: contain;
+    object-fit: fill;
   }
 }
 
@@ -787,6 +790,7 @@ header.public-header .public-header__scan .ant-btn-icon {
   flex-direction: column;
   gap: 8px;
 }
+
 .product-image__frame {
   display: flex;
   align-items: center;
