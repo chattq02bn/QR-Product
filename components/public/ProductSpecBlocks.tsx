@@ -70,7 +70,7 @@ export default function ProductSpecBlocks({ product }: Props) {
     <>
       {hasEntries(specs) && <SpecBlock title="Thông số kỹ thuật" entries={specs} />}
       {hasEntries(distributor) && (
-        <SpecBlock title="Nhà sản xuất / Đơn vị phân phối" entries={distributor} />
+        <SpecBlock title="Đơn vị nhập khẩu" entries={distributor} />
       )}
     </>
   );
