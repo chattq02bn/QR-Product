@@ -4,6 +4,29 @@ import { SLUG_PATTERN } from '@/lib/slug';
 export const MAX_IMAGE_BYTES = 10 * 1024 * 1024; // 10MB
 export const MAX_IMAGES_PER_PRODUCT = 30;
 
+/** MIME type ảnh được phép upload (Cloudinary từ chối HEIC/HEIF nên cần loại trừ ngay). */
+export const SUPPORTED_IMAGE_TYPES = [
+  'image/jpeg',
+  'image/jpg',
+  'image/png',
+  'image/webp',
+  'image/gif',
+  'image/avif',
+  'image/bmp',
+  'image/svg+xml',
+] as const;
+
+export function isSupportedImageType(type: string): boolean {
+  return SUPPORTED_IMAGE_TYPES.includes(
+    type.trim().toLowerCase() as (typeof SUPPORTED_IMAGE_TYPES)[number],
+  );
+}
+
+/** Thông báo lỗi khi gặp định dạng ảnh không hỗ trợ. */
+export function unsupportedImageMessage(filename: string): string {
+  return `Định dạng ảnh "${filename}" chưa được hỗ trợ, vui lòng chọn JPG, PNG, WEBP hoặc GIF`;
+}
+
 export const nameSchema = z
   .string({ required_error: 'Tên sản phẩm là bắt buộc' })
   .trim()

@@ -40,6 +40,29 @@ export default function ProductInfoCard({ product }: Props) {
           </div>
         )}
 
+        {hasImage && productImages.length > 1 && (
+          <div className="product-info__thumbs" role="list">
+            {productImages.map((image, index) => (
+              <button
+                key={image.id}
+                type="button"
+                role="listitem"
+                className={`product-info__thumb${index === activeIndex ? ' is-active' : ''}`}
+                aria-label={`Xem ảnh sản phẩm ${index + 1}`}
+                title={`Ảnh sản phẩm ${index + 1}`}
+                onClick={() => setActiveIndex(index)}
+              >
+                <Image
+                  src={image.url.trim()}
+                  alt=""
+                  preview={false}
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                />
+              </button>
+            ))}
+          </div>
+        )}
+
         <div className="product-info__meta">
           <p className="product-info__name">{product.name}</p>
 
@@ -64,29 +87,6 @@ export default function ProductInfoCard({ product }: Props) {
           {description && <p className="product-info__desc">{description}</p>}
         </div>
       </div>
-
-      {hasImage && productImages.length > 1 && (
-        <div className="product-info__thumbs" role="list">
-          {productImages.map((image, index) => (
-            <button
-              key={image.id}
-              type="button"
-              role="listitem"
-              className={`product-info__thumb${index === activeIndex ? ' is-active' : ''}`}
-              aria-label={`Xem ảnh sản phẩm ${index + 1}`}
-              title={`Ảnh sản phẩm ${index + 1}`}
-              onClick={() => setActiveIndex(index)}
-            >
-              <Image
-                src={image.url.trim()}
-                alt=""
-                preview={false}
-                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-              />
-            </button>
-          ))}
-        </div>
-      )}
     </section>
   );
 }

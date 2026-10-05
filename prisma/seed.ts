@@ -29,7 +29,13 @@ const GUIDE_IMAGE_URLS = [
   'https://res.cloudinary.com/demo/image/upload/c_fill,w_1200,h_1500,q_auto/sample.jpg',
 ];
 
-const PRODUCT_IMAGE_URL = 'https://res.cloudinary.com/demo/image/upload/w_1200,q_auto/sample.jpg';
+/** Ảnh sản phẩm (hiển thị ở trang tra cứu + dải thumbnail bên dưới). */
+const PRODUCT_IMAGE_URLS = [
+  'https://res.cloudinary.com/demo/image/upload/w_1200,q_auto/sample.jpg',
+  'https://res.cloudinary.com/demo/image/upload/w_1200,q_auto/dog.jpg',
+  'https://res.cloudinary.com/demo/image/upload/w_1200,q_auto/cld-sample.jpg',
+  'https://res.cloudinary.com/demo/image/upload/w_1200,q_auto/cld-sample-2.jpg',
+];
 
 type SeedProduct = {
   /** Tên sản phẩm (cột B). */
@@ -374,8 +380,13 @@ async function seedProducts() {
         distributor: DISTRIBUTOR,
         images: {
           create: [
-            // Ảnh sản phẩm (ảnh đầu tiên là ảnh đại diện ở trang tra cứu)
-            { url: PRODUCT_IMAGE_URL, publicId: '', order: 0, kind: 'product' },
+            // 4 ảnh sản phẩm (ảnh đầu tiên là ảnh đại diện ở trang tra cứu)
+            ...PRODUCT_IMAGE_URLS.map((url, order) => ({
+              url,
+              publicId: '',
+              order,
+              kind: 'product',
+            })),
             ...GUIDE_IMAGE_URLS.map((url, order) => ({
               url,
               publicId: '',

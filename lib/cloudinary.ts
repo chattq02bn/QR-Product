@@ -29,6 +29,33 @@ function ensureConfig() {
   return config;
 }
 
+/**
+ * Đặt tên file upload an toàn: bỏ đuôi, chuyển tiếng Việt có dấu về ASCII,
+ * thêm hậu tố ngẫu nhiên để 2 ảnh cùng tên không đụng nhau (tránh ghi đè ảnh cũ).
+ */
+function buildPublicId(filename?: string): string | undefined {
+  const base = (filename ?? '').replace(/\.[^.]+$/, '');
+  const slug = base
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-zA-Z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .toLowerCase()
+    .slice(0, 48);
+  if (!slug) return undefined;
+  return `${slug}-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
+}
+
+/** Lấy thông điệp lỗi thật từ lỗi Cloudinary/lỗi JS. */
+function describeUploadError(error: unknown): string {
+  if (error && typeof error === 'object' && 'message' in error) {
+    const message = (error as { message?: unknown }).message;
+    if (typeof message === 'string' && message.trim()) return message.trim();
+  }
+  if (error instanceof Error && error.message.trim()) return error.message.trim();
+  return 'dịch vụ ảnh trả về lỗi không xác định';
+}
+
 /** Upload một file ảnh (buffer) lên Cloudinary, trả về { url, publicId }. */
 export async function uploadImage(
   buffer: Buffer,
@@ -36,27 +63,41 @@ export async function uploadImage(
 ): Promise<CloudinaryImage> {
   ensureConfig();
   const folder = options.folder || process.env.CLOUDINARY_FOLDER?.trim() || 'tracuu';
+  const publicId = buildPublicId(options.filename);
 
-  const result = await new Promise<UploadApiResponse>((resolve, reject) => {
-    const stream = cloudinary.uploader.upload_stream(
-      {
-        folder,
-        resource_type: 'image',
-        public_id: options.filename?.replace(/\.[^.]+$/, ''),
-        overwrite: false,
-        unique_filename: true,
-        transformation: [{ quality: 'auto', fetch_format: 'auto' }],
-      },
-      (error, uploadResult) => {
-        if (error || !uploadResult) {
-          reject(error ?? new Error('Upload ảnh thất bại'));
-          return;
-        }
-        resolve(uploadResult);
-      },
-    );
-    stream.end(buffer);
-  });
+  const attempt = () =>
+    new Promise<UploadApiResponse>((resolve, reject) => {
+      const stream = cloudinary.uploader.upload_stream(
+        {
+          folder,
+          resource_type: 'image',
+          ...(publicId ? { public_id: publicId } : {}),
+          overwrite: false,
+          unique_filename: true,
+          transformation: [{ quality: 'auto', fetch_format: 'auto' }],
+        },
+        (error, uploadResult) => {
+          if (error || !uploadResult) {
+            reject(error ?? new Error('Upload ảnh thất bại'));
+            return;
+          }
+          resolve(uploadResult);
+        },
+      );
+      stream.end(buffer);
+    });
+
+  let result: UploadApiResponse;
+  try {
+    result = await attempt();
+  } catch {
+    // Lỗi tạm thời (mạng, timeout...): thử lại một lần trước khi báo lỗi.
+    try {
+      result = await attempt();
+    } catch (secondError) {
+      throw new Error(describeUploadError(secondError));
+    }
+  }
 
   return { url: result.secure_url, publicId: result.public_id };
 }

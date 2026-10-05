@@ -23,10 +23,12 @@ import { isValidHttpUrl } from '@/lib/format';
 import { checkProductCode, uploadProductImage } from '@/lib/queries';
 import type { ProductPayload } from '@/lib/queries';
 import {
+  isSupportedImageType,
   MAX_IMAGE_BYTES,
   MAX_IMAGES_PER_PRODUCT,
   MAX_PRODUCT_CODE_LENGTH,
   PRODUCT_CODE_PATTERN,
+  unsupportedImageMessage,
 } from '@/lib/validators';
 import type { ProductView, SpecEntry } from '@/lib/types';
 
@@ -280,6 +282,13 @@ export default function ProductModal({ open, product, onClose, onSave }: Props) 
       const { file, onSuccess: onOk, onError } = options;
       const rcFile = file as RcFile;
 
+      if (rcFile.type && !isSupportedImageType(rcFile.type)) {
+        const reason = unsupportedImageMessage(rcFile.name);
+        message.error(reason);
+        onError?.(new Error(reason));
+        return;
+      }
+
       if (rcFile.size > MAX_IMAGE_BYTES) {
         message.error(`Ảnh "${rcFile.name}" vượt quá 10MB`);
         onError?.(new Error('File quá lớn'));
@@ -490,8 +499,11 @@ export default function ProductModal({ open, product, onClose, onSave }: Props) 
       return;
     }
 
+    // Ảnh hợp lệ: đã có url thật (upload/link) hoặc còn file chờ upload (url blob)
     const validCount = (kind: ImageKind) =>
-      imageItems[kind].filter((item) => item.url && !item.url.startsWith('blob:')).length;
+      imageItems[kind].filter(
+        (item) => Boolean(item.file) || (Boolean(item.url) && !item.url.startsWith('blob:')),
+      ).length;
     if (validCount('product') === 0) {
       message.error('Sản phẩm bắt buộc phải có ít nhất 1 ảnh sản phẩm');
       return;
