@@ -862,6 +862,33 @@ header.public-header .public-header__scan .ant-btn-icon {
   min-width: 0;
 }
 
+/* Kéo thả đổi thứ tự dòng trong danh sách "tên trường - giá trị" */
+.entry-list__handle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 22px;
+  height: 32px;
+  color: rgba(0, 0, 0, 0.35);
+  cursor: grab;
+  user-select: none;
+}
+
+.entry-list__handle:active {
+  cursor: grabbing;
+}
+
+.entry-list__row--over {
+  outline: 2px dashed #10357a;
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+.entry-list__row--dragging {
+  opacity: 0.55;
+}
+
 .product-image {
   display: flex;
   flex-direction: column;

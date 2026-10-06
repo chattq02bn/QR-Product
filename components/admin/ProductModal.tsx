@@ -17,7 +17,13 @@ import {
   Upload,
 } from 'antd';
 import type { RcFile, UploadFile, UploadProps } from 'antd/es/upload/interface';
-import { CopyOutlined, DeleteOutlined, LinkOutlined, PlusOutlined } from '@ant-design/icons';
+import {
+  CopyOutlined,
+  DeleteOutlined,
+  HolderOutlined,
+  LinkOutlined,
+  PlusOutlined,
+} from '@ant-design/icons';
 import { apiFetch } from '@/lib/client';
 import { isValidHttpUrl } from '@/lib/format';
 import { checkProductCode, uploadProductImage } from '@/lib/queries';
@@ -57,6 +63,9 @@ const IMAGE_KIND_TITLE: Record<ImageKind, string> = {
 
 type ExpiryUnit = 'minute' | 'hour' | 'day';
 type ExpiryMode = 'permanent' | 'duration';
+
+/** Tên field của hai danh sách "tên trường - giá trị" trong form. */
+type EntryListName = 'specs' | 'distributor';
 
 type FormValues = {
   name: string;
@@ -189,6 +198,12 @@ export default function ProductModal({ open, product, onClose, onSave }: Props) 
   const [saving, setSaving] = useState(false);
   const dragKeyRef = useRef<string | null>(null);
   const [dragOverKey, setDragOverKey] = useState<string | null>(null);
+  /** Kéo thả đổi thứ tự dòng trong danh sách "tên trường - giá trị". */
+  const entryDragRef = useRef<{ list: EntryListName; index: number } | null>(null);
+  const [entryDragOver, setEntryDragOver] = useState<{
+    list: EntryListName;
+    index: number;
+  } | null>(null);
   const blobUrlsRef = useRef<Set<string>>(new Set());
   /** Kết quả kiểm tra "mã sản phẩm đã tồn tại" theo từng mã, tránh gọi API lặp lại. */
   const codeCheckCacheRef = useRef<Map<string, boolean>>(new Map());
@@ -223,6 +238,8 @@ export default function ProductModal({ open, product, onClose, onSave }: Props) 
     setCopiedFrom(null);
     setDragOverKey(null);
     dragKeyRef.current = null;
+    setEntryDragOver(null);
+    entryDragRef.current = null;
     blobUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
     blobUrlsRef.current.clear();
     codeCheckCacheRef.current.clear();
@@ -639,44 +656,90 @@ export default function ProductModal({ open, product, onClose, onSave }: Props) 
     }
   };
 
-  /** Danh sách "tên trường - giá trị" cho một khối JSON (thêm/sửa/xóa dòng tùy ý). */
+  /** Danh sách "tên trường - giá trị" cho một khối JSON (thêm/sửa/xóa/kéo thả đổi thứ tự dòng). */
   const renderEntryList = (
-    name: 'specs' | 'distributor',
+    name: EntryListName,
     labelPlaceholder: string,
     valuePlaceholder: string,
   ) => (
     <Form.List name={name}>
-      {(fields, { add, remove }) => (
+      {(fields, { add, remove, move }) => (
         <div className="entry-list">
-          {fields.map((field) => (
-            <div className="entry-list__row" key={field.key}>
-              <Form.Item name={[field.name, 'label']} style={{ marginBottom: 0 }}>
-                <Input
-                  placeholder={labelPlaceholder}
-                  maxLength={120}
-                  allowClear
+          {fields.map((field) => {
+            const isDragOver = entryDragOver?.list === name && entryDragOver.index === field.name;
+            const isDragging =
+              entryDragRef.current?.list === name && entryDragRef.current.index === field.name;
+
+            return (
+              <div
+                className={`entry-list__row${isDragOver ? ' entry-list__row--over' : ''}${
+                  isDragging ? ' entry-list__row--dragging' : ''
+                }`}
+                key={field.key}
+                onDragEnter={() => setEntryDragOver({ list: name, index: field.name })}
+                onDragOver={(event) => {
+                  event.preventDefault();
+                  event.dataTransfer.dropEffect = 'move';
+                }}
+                onDragLeave={(event) => {
+                  if (event.currentTarget.contains(event.relatedTarget as Node | null)) return;
+                  setEntryDragOver((prev) =>
+                    prev && prev.list === name && prev.index === field.name ? null : prev,
+                  );
+                }}
+                onDrop={(event) => {
+                  event.preventDefault();
+                  const from = entryDragRef.current;
+                  entryDragRef.current = null;
+                  setEntryDragOver(null);
+                  if (!from || from.list !== name || from.index === field.name) return;
+                  move(from.index, field.name);
+                }}
+              >
+                <span
+                  className="entry-list__handle"
+                  draggable={!saving}
+                  title="Kéo để đổi thứ tự dòng"
+                  onDragStart={(event) => {
+                    entryDragRef.current = { list: name, index: field.name };
+                    setEntryDragOver({ list: name, index: field.name });
+                    event.dataTransfer.effectAllowed = 'move';
+                  }}
+                  onDragEnd={() => {
+                    entryDragRef.current = null;
+                    setEntryDragOver(null);
+                  }}
+                >
+                  <HolderOutlined />
+                </span>
+                <Form.Item name={[field.name, 'label']} style={{ marginBottom: 0 }}>
+                  <Input
+                    placeholder={labelPlaceholder}
+                    maxLength={120}
+                    allowClear
+                    disabled={saving}
+                  />
+                </Form.Item>
+                <Form.Item name={[field.name, 'value']} style={{ marginBottom: 0 }}>
+                  <Input
+                    placeholder={valuePlaceholder}
+                    maxLength={500}
+                    allowClear
+                    disabled={saving}
+                  />
+                </Form.Item>
+                <Button
+                  type="text"
+                  danger
+                  icon={<DeleteOutlined />}
+                  title="Xóa dòng"
+                  aria-label="Xóa dòng"
                   disabled={saving}
+                  onClick={() => remove(field.name)}
                 />
-              </Form.Item>
-              <Form.Item name={[field.name, 'value']} style={{ marginBottom: 0 }}>
-                <Input
-                  placeholder={valuePlaceholder}
-                  maxLength={500}
-                  allowClear
-                  disabled={saving}
-                />
-              </Form.Item>
-              <Button
-                type="text"
-                danger
-                icon={<DeleteOutlined />}
-                title="Xóa dòng"
-                aria-label="Xóa dòng"
-                disabled={saving}
-                onClick={() => remove(field.name)}
-              />
-            </div>
-          ))}
+              </div>
+            );
+          })}
 
           <Button
             type="dashed"
