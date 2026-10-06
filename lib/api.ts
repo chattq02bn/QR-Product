@@ -17,7 +17,11 @@ export function handleApiError(error: unknown): NextResponse {
 
   if (error instanceof ZodError) {
     const first = error.issues[0];
-    const message = first ? `${first.path.join('.')}: ${first.message}` : 'Dữ liệu không hợp lệ';
+    const message = first
+      ? first.path.length > 0
+        ? `${first.path.join('.')}: ${first.message}`
+        : first.message
+      : 'Dữ liệu không hợp lệ';
     return fail(message, 400);
   }
 

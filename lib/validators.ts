@@ -199,18 +199,31 @@ export const qrQuerySchema = z.object({
   download: z.union([z.literal('1'), z.literal('true')]).optional(),
 });
 
+/** Body chung của các API xuất file: tải tất cả hoặc tải theo danh sách id sản phẩm. */
+const exportSelectionSchema = z.object({
+  all: z.boolean().optional().default(false),
+  ids: z.array(z.string().min(1)).max(5000).optional().default([]),
+});
+
 /** Body của API nén mã QR: tải tất cả hoặc tải theo danh sách id sản phẩm. */
-export const qrExportSchema = z
-  .object({
-    all: z.boolean().optional().default(false),
-    ids: z.array(z.string().min(1)).max(5000).optional().default([]),
+export const qrExportSchema = exportSelectionSchema
+  .extend({
     size: z.coerce.number().int().min(128).max(2048).optional(),
   })
   .refine((value) => value.all || value.ids.length > 0, {
     message: 'Chọn ít nhất một sản phẩm để tải mã QR',
   });
 
+/** Body của API xuất Excel: tải tất cả hoặc tải theo danh sách id sản phẩm. */
+export const excelExportSchema = exportSelectionSchema.refine(
+  (value) => value.all || value.ids.length > 0,
+  {
+    message: 'Chọn ít nhất một sản phẩm để tải file Excel',
+  },
+);
+
 export type QrExportInput = z.infer<typeof qrExportSchema>;
+export type ExcelExportInput = z.infer<typeof excelExportSchema>;
 
 export type CreateProductInput = z.infer<typeof createProductSchema>;
 export type UpdateProductInput = z.infer<typeof updateProductSchema>;

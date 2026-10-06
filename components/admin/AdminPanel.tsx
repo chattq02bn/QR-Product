@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Key } from 'react';
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Alert, App, Button, Dropdown, Grid, Space, Typography } from 'antd';
-import { DownOutlined, DownloadOutlined, PlusOutlined, ReloadOutlined } from '@ant-design/icons';
+import { DownOutlined, DownloadOutlined, FileExcelOutlined, PlusOutlined, ReloadOutlined } from '@ant-design/icons';
 import ProductTable from '@/components/admin/ProductTable';
 import ProductModal from '@/components/admin/ProductModal';
 import ProductSearch from '@/components/admin/ProductSearch';
@@ -26,6 +26,12 @@ import {
 import type { ProductListParams, ProductPayload } from '@/lib/queries';
 import type { ProductView } from '@/lib/types';
 
+/** Loại file đang tải: gói mã QR nén (.zip/.rar) hoặc bảng Excel (.xlsx). */
+type ExportKind = 'qr' | 'excel';
+
+/** Chế độ tải: tất cả sản phẩm hoặc các sản phẩm đang được chọn. */
+type ExportMode = 'all' | 'selected';
+
 export default function AdminPanel() {
   const { message } = App.useApp();
   const queryClient = useQueryClient();
@@ -39,7 +45,7 @@ export default function AdminPanel() {
   const [editing, setEditing] = useState<ProductView | null>(null);
   const [qrTarget, setQrTarget] = useState<QrTarget>(null);
   const [selectedKeys, setSelectedKeys] = useState<Key[]>([]);
-  const [exporting, setExporting] = useState<'all' | 'selected' | null>(null);
+  const [exporting, setExporting] = useState<{ kind: ExportKind; mode: ExportMode } | null>(null);
   const scrollTopOnLoadRef = useRef(false);
 
   /** Nhận kết quả tìm kiếm từ ProductSearch (đã debounce trong component con). */
@@ -146,23 +152,27 @@ export default function AdminPanel() {
     return match?.[1] ?? null;
   };
 
-  const downloadQrArchive = async (mode: 'all' | 'selected') => {
+  /** Tải file từ API (nhận blob + filename từ header) — dùng chung cho QR và Excel. */
+  const downloadFileFromApi = async (options: {
+    kind: ExportKind;
+    mode: ExportMode;
+    url: string;
+    pendingMessage: string;
+    successMessage: string;
+    errorMessage: string;
+    fallbackName: string;
+  }) => {
     if (exporting) return;
-    if (mode === 'selected' && selectedCount === 0) {
+    if (options.mode === 'selected' && selectedCount === 0) {
       message.info('Hãy chọn ít nhất một sản phẩm');
       return;
     }
 
-    setExporting(mode);
-    const hideLoading = message.loading(
-      mode === 'all'
-        ? `Đang tạo file nén cho ${total} sản phẩm, vui lòng chờ...`
-        : `Đang tạo file nén cho ${selectedCount} sản phẩm đã chọn...`,
-      0,
-    );
+    setExporting({ kind: options.kind, mode: options.mode });
+    const hideLoading = message.loading(options.pendingMessage, 0);
     try {
-      const payload = mode === 'all' ? { all: true } : { ids: selectedKeys.map(String) };
-      const res = await fetch('/api/qr/export', {
+      const payload = options.mode === 'all' ? { all: true } : { ids: selectedKeys.map(String) };
+      const res = await fetch(options.url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -172,7 +182,7 @@ export default function AdminPanel() {
         const data = (await res.json().catch(() => null)) as {
           error?: { message?: string };
         } | null;
-        message.error(data?.error?.message ?? 'Không tạo được file mã QR, vui lòng thử lại');
+        message.error(data?.error?.message ?? options.errorMessage);
         return;
       }
 
@@ -180,23 +190,55 @@ export default function AdminPanel() {
       const url = URL.createObjectURL(blob);
       const anchor = document.createElement('a');
       anchor.href = url;
-      anchor.download = readFilename(res.headers.get('Content-Disposition')) ?? 'ma-qr.zip';
+      anchor.download = readFilename(res.headers.get('Content-Disposition')) ?? options.fallbackName;
       document.body.appendChild(anchor);
       anchor.click();
       anchor.remove();
       URL.revokeObjectURL(url);
 
-      message.success(
-        mode === 'all'
-          ? `Đã tải mã QR của ${total} sản phẩm`
-          : `Đã tải mã QR của ${selectedCount} sản phẩm đã chọn`,
-      );
+      message.success(options.successMessage);
     } catch {
-      message.error('Không tải được file mã QR, vui lòng thử lại');
+      message.error(options.errorMessage);
     } finally {
       hideLoading();
       setExporting(null);
     }
+  };
+
+  const downloadQrArchive = (mode: ExportMode) => {
+    void downloadFileFromApi({
+      kind: 'qr',
+      mode,
+      url: '/api/qr/export',
+      pendingMessage:
+        mode === 'all'
+          ? `Đang tạo file nén cho ${total} sản phẩm, vui lòng chờ...`
+          : `Đang tạo file nén cho ${selectedCount} sản phẩm đã chọn...`,
+      successMessage:
+        mode === 'all'
+          ? `Đã tải mã QR của ${total} sản phẩm`
+          : `Đã tải mã QR của ${selectedCount} sản phẩm đã chọn`,
+      errorMessage: 'Không tải được file mã QR, vui lòng thử lại',
+      fallbackName: 'ma-qr.zip',
+    });
+  };
+
+  const downloadExcel = (mode: ExportMode) => {
+    void downloadFileFromApi({
+      kind: 'excel',
+      mode,
+      url: '/api/export/excel',
+      pendingMessage:
+        mode === 'all'
+          ? `Đang tạo file Excel cho ${total} sản phẩm, vui lòng chờ...`
+          : `Đang tạo file Excel cho ${selectedCount} sản phẩm đã chọn...`,
+      successMessage:
+        mode === 'all'
+          ? `Đã tải file Excel của ${total} sản phẩm`
+          : `Đã tải file Excel của ${selectedCount} sản phẩm đã chọn`,
+      errorMessage: 'Không tải được file Excel, vui lòng thử lại',
+      fallbackName: 'danh-sach-san-pham.xlsx',
+    });
   };
 
   const downloadMenu = {
@@ -214,7 +256,26 @@ export default function AdminPanel() {
       },
     ],
     onClick: ({ key }: { key: string }) => {
-      void downloadQrArchive(key as 'all' | 'selected');
+      downloadQrArchive(key as ExportMode);
+    },
+  };
+
+  const excelMenu = {
+    items: [
+      {
+        key: 'all',
+        icon: <FileExcelOutlined />,
+        label: `Tải tất cả (${total})`,
+      },
+      {
+        key: 'selected',
+        icon: <FileExcelOutlined />,
+        label: `Tải Excel của ${selectedCount} sản phẩm đã chọn`,
+        disabled: selectedCount === 0,
+      },
+    ],
+    onClick: ({ key }: { key: string }) => {
+      downloadExcel(key as ExportMode);
     },
   };
 
@@ -234,7 +295,7 @@ export default function AdminPanel() {
             <Dropdown trigger={['click']} menu={downloadMenu}>
               <Button
                 icon={<DownloadOutlined />}
-                loading={exporting !== null}
+                loading={exporting?.kind === 'qr'}
                 title={
                   selectedCount === 0
                     ? 'Tải mã QR của tất cả sản phẩm (.zip)'
@@ -242,6 +303,19 @@ export default function AdminPanel() {
                 }
               >
                 Tải mã QR <DownOutlined />
+              </Button>
+            </Dropdown>
+            <Dropdown trigger={['click']} menu={excelMenu}>
+              <Button
+                icon={<FileExcelOutlined />}
+                loading={exporting?.kind === 'excel'}
+                title={
+                  selectedCount === 0
+                    ? 'Tải bảng Excel của tất cả sản phẩm (.xlsx)'
+                    : 'Tải bảng Excel (.xlsx): tất cả hoặc sản phẩm đã chọn'
+                }
+              >
+                Tải Excel <DownOutlined />
               </Button>
             </Dropdown>
             <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>
