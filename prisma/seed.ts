@@ -374,6 +374,8 @@ async function seedProducts() {
         name: item.name,
         slug,
         productCode: item.productCode,
+        // Mã hiển thị: seed lấy theo mã sản phẩm (admin có thể sửa sau)
+        productCodeAlias: item.productCode,
         manufacturer: BRAND,
         description: item.description,
         specs: buildSpecs(item),

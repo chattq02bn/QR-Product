@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Image } from 'antd';
-import { isValidHttpUrl } from '@/lib/format';
+import { getDisplayProductCode, isValidHttpUrl } from '@/lib/format';
 import type { ProductView, SpecEntry } from '@/lib/types';
 
 type Props = {
@@ -19,7 +19,7 @@ function findSpecValue(entries: SpecEntry[] | null, labels: string[]): string {
 
 export default function ProductInfoCard({ product }: Props) {
   const description = product.description?.trim() ?? '';
-  const productCode = product.productCode?.trim() ?? '';
+  const productCode = getDisplayProductCode(product);
   const model = findSpecValue(product.specs, ['Model', 'Mô hình']);
   const brand = findSpecValue(product.specs, ['Nhãn hiệu', 'Thương hiệu', 'Brand']);
 

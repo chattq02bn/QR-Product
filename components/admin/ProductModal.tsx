@@ -69,8 +69,10 @@ type EntryListName = 'specs' | 'distributor';
 
 type FormValues = {
   name: string;
-  /** Mã sản phẩm in trên bao bì / báo giá. */
+  /** Mã sản phẩm (tự sinh, không cho sửa) — dùng cho QR / tra cứu dữ liệu. */
   productCode: string;
+  /** Mã sản phẩm hiển thị cho người dùng (chỉ hiển thị, không tra cứu). */
+  productCodeAlias?: string;
   qrMode: ExpiryMode;
   qrDuration: number;
   qrUnit: ExpiryUnit;
@@ -256,6 +258,7 @@ export default function ProductModal({ open, product, onClose, onSave }: Props) 
     form.setFieldsValue({
       name: product?.name ?? '',
       productCode: product?.productCode ?? '',
+      productCodeAlias: product?.productCodeAlias ?? '',
       description: product?.description ?? '',
       manufacturer: product?.manufacturer ?? '',
       specs: toFormEntries(product?.specs, DEFAULT_SPEC_LABELS),
@@ -455,12 +458,16 @@ export default function ProductModal({ open, product, onClose, onSave }: Props) 
    * Kiểm tra mã sản phẩm đã tồn tại trên hệ thống hay chưa (không tính chính nó).
    * Không kiểm tra được (mất kết nối...) thì cho qua: API vẫn chặn khi lưu.
    */
-  const isProductCodeTaken = async (code: string, excludeId?: string): Promise<boolean> => {
-    const key = `${excludeId ?? ''}::${code.toLowerCase()}`;
+  const isProductCodeTaken = async (
+    code: string,
+    excludeId?: string,
+    field: 'productCode' | 'productCodeAlias' = 'productCode',
+  ): Promise<boolean> => {
+    const key = `${field}::${excludeId ?? ''}::${code.toLowerCase()}`;
     const cached = codeCheckCacheRef.current.get(key);
     if (cached !== undefined) return cached;
     try {
-      const exists = await checkProductCode(code, excludeId);
+      const exists = await checkProductCode(code, excludeId, field);
       codeCheckCacheRef.current.set(key, exists);
       return exists;
     } catch {
@@ -471,7 +478,8 @@ export default function ProductModal({ open, product, onClose, onSave }: Props) 
   /**
    * Tạo bản sao: sao chép toàn bộ thông tin (tên, mô tả, thông số, đơn vị, hạn QR,
    * ảnh sản phẩm, toàn bộ ảnh hướng dẫn) từ sản phẩm đang mở, chỉ xóa mã sản phẩm
-   * để admin nhập mã mới. Sau đó bấm "Tạo sản phẩm" sẽ tạo 1 sản phẩm hoàn toàn mới.
+   * (mã mới tự sinh khi lưu) và mã hiển thị để admin nhập lại. Sau đó bấm "Tạo sản phẩm"
+   * sẽ tạo 1 sản phẩm hoàn toàn mới.
    */
   const handleCopy = () => {
     if (!product || saving) return;
@@ -486,6 +494,7 @@ export default function ProductModal({ open, product, onClose, onSave }: Props) 
     form.setFieldsValue({
       name: product.name,
       productCode: '',
+      productCodeAlias: '',
       description: product.description ?? '',
       manufacturer: product.manufacturer ?? '',
       specs: toFormEntries(product.specs, DEFAULT_SPEC_LABELS),
@@ -501,10 +510,11 @@ export default function ProductModal({ open, product, onClose, onSave }: Props) 
     setLinkText('');
     setExpiryTouched(false);
 
-    message.success(`Đã copy thông tin từ mã ${product.productCode} — hãy nhập mã sản phẩm mới`);
+    message.success(
+      `Đã copy thông tin từ mã ${product.productCode} — mã sản phẩm mới sẽ tự sinh khi lưu`,
+    );
     window.setTimeout(() => {
-      form.focusField('productCode');
-      void form.validateFields(['productCode']).catch(() => undefined);
+      form.focusField('productCodeAlias');
     }, 0);
   };
 
@@ -633,7 +643,10 @@ export default function ProductModal({ open, product, onClose, onSave }: Props) 
 
       const payload: ProductPayload = {
         name: values.name.trim(),
-        productCode: values.productCode.trim(),
+        // Mã sản phẩm: ô bị khóa, để trống khi tạo mới -> server tự sinh (SP + ddMMyy + STT)
+        productCode: values.productCode.trim() || undefined,
+        // Mã hiển thị: để trống -> server lấy theo mã sản phẩm
+        productCodeAlias: values.productCodeAlias?.trim() ?? '',
         description: values.description?.trim() || null,
         manufacturer: values.manufacturer?.trim() || null,
         specs: specsResult.entries,
@@ -915,28 +928,50 @@ export default function ProductModal({ open, product, onClose, onSave }: Props) 
             <Form.Item
               name="productCode"
               label="Mã sản phẩm"
-              required
-              validateTrigger="onBlur"
+              required={isEditing}
               extra={
                 isCopy
-                  ? `Đang tạo bản sao từ mã ${copiedFrom} — hãy nhập mã sản phẩm mới (khác mã gốc).`
-                  : 'Mã in trên bao bì / báo giá, hiển thị ở trang tra cứu và khối thông số kỹ thuật.'
+                  ? `Đang tạo bản sao từ mã ${copiedFrom} — mã sản phẩm mới sẽ tự sinh khi lưu.`
+                  : isEditing
+                    ? 'Mã dùng cho QR / link tra cứu, cố định và không thể sửa.'
+                    : 'Tự sinh khi tạo sản phẩm theo mẫu SP + ddMMyy + STT, dùng cho QR / tra cứu (không thể sửa).'
               }
+              rules={isEditing ? [{ required: true, message: 'Thiếu mã sản phẩm' }] : []}
+            >
+              <Input placeholder="Tự động khi tạo sản phẩm" disabled />
+            </Form.Item>
+
+            <Form.Item
+              name="productCodeAlias"
+              label="Mã sản phẩm hiển thị"
+              validateTrigger="onBlur"
+              extra="Hiển thị trên bảng admin và trang tra cứu (chỉ hiển thị, không dùng để tra cứu). Để trống sẽ lấy mã sản phẩm."
               rules={[
                 {
                   validator: async (_, value?: string) => {
                     const trimmed = (value ?? '').trim();
-                    if (!trimmed) throw new Error('Vui lòng nhập mã sản phẩm');
+                    if (!trimmed) return;
                     if (trimmed.length < 2 || trimmed.length > MAX_PRODUCT_CODE_LENGTH) {
-                      throw new Error(`Mã sản phẩm từ 2 đến ${MAX_PRODUCT_CODE_LENGTH} ký tự`);
+                      throw new Error(
+                        `Mã sản phẩm hiển thị từ 2 đến ${MAX_PRODUCT_CODE_LENGTH} ký tự`,
+                      );
                     }
                     if (!PRODUCT_CODE_PATTERN.test(trimmed)) {
-                      throw new Error('Mã sản phẩm chỉ gồm chữ, số, dấu cách và ký tự . - _');
+                      throw new Error(
+                        'Mã sản phẩm hiển thị chỉ gồm chữ, số, dấu cách và ký tự . - _',
+                      );
                     }
                     // Mã không đổi so với ban đầu -> không cần kiểm tra lại (bản sao luôn kiểm tra)
-                    if (!isCopy && trimmed === (product?.productCode ?? '').trim()) return;
-                    if (await isProductCodeTaken(trimmed, isCopy ? undefined : product?.id)) {
-                      throw new Error('Mã sản phẩm đã tồn tại trên hệ thống');
+                    const current =
+                      product?.productCodeAlias?.trim() || product?.productCode?.trim() || '';
+                    if (!isCopy && trimmed === current) return;
+                    const taken = await isProductCodeTaken(
+                      trimmed,
+                      isCopy ? undefined : product?.id,
+                      'productCodeAlias',
+                    );
+                    if (taken) {
+                      throw new Error('Mã sản phẩm hiển thị đã tồn tại trên hệ thống');
                     }
                   },
                 },

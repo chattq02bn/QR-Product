@@ -1,6 +1,7 @@
 'use client';
 
 import type { ProductView, SpecEntry } from '@/lib/types';
+import { getDisplayProductCode } from '@/lib/format';
 
 type Props = {
   product: ProductView;
@@ -21,8 +22,8 @@ function normalizeLabel(label?: string): string {
 }
 
 /**
- * Chèn dòng "Mã sản phẩm" (lấy từ cột productCode) vào danh sách thông số.
- * Không chèn trùng khi dữ liệu đã sẵn dòng "Mã sản phẩm".
+ * Chèn dòng "Mã sản phẩm" (mã hiển thị: productCodeAlias, thiếu thì lấy productCode)
+ * vào danh sách thông số. Không chèn trùng khi dữ liệu đã sẵn dòng "Mã sản phẩm".
  */
 function withProductCode(entries: SpecEntry[] | null, productCode: string): SpecEntry[] {
   const rows = Array.isArray(entries) ? entries.map((entry) => ({ ...entry })) : [];
@@ -60,7 +61,7 @@ function SpecBlock({ title, entries }: { title: string; entries: SpecEntry[] }) 
 
 /** Khối "Thông số kỹ thuật" và "Nhà sản xuất / Đơn vị phân phối" trên trang tra cứu. */
 export default function ProductSpecBlocks({ product }: Props) {
-  const productCode = product.productCode?.trim() ?? '';
+  const productCode = getDisplayProductCode(product);
   const specs = productCode ? withProductCode(product.specs, productCode) : product.specs;
   const distributor = product.distributor;
 

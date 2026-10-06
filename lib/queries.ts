@@ -41,11 +41,16 @@ export async function deleteProduct(id: string): Promise<{ id: string }> {
 }
 
 /**
- * Kiểm tra mã sản phẩm đã tồn tại trên hệ thống chưa.
+ * Kiểm tra mã sản phẩm / mã hiển thị đã tồn tại trên hệ thống chưa.
  * `excludeId`: id sản phẩm đang sửa (không tính chính nó).
+ * `field`: cột cần kiểm tra (mặc định productCode).
  */
-export async function checkProductCode(code: string, excludeId?: string): Promise<boolean> {
-  const query = new URLSearchParams({ code });
+export async function checkProductCode(
+  code: string,
+  excludeId?: string,
+  field: 'productCode' | 'productCodeAlias' = 'productCode',
+): Promise<boolean> {
+  const query = new URLSearchParams({ code, field });
   if (excludeId) query.set('id', excludeId);
   const data = await apiFetch<{ exists: boolean }>(`/api/products/check-code?${query.toString()}`);
   return data.exists;

@@ -52,6 +52,22 @@ export const productCodeSchema = z
   .max(MAX_PRODUCT_CODE_LENGTH, `Mã sản phẩm tối đa ${MAX_PRODUCT_CODE_LENGTH} ký tự`)
   .regex(PRODUCT_CODE_PATTERN, 'Mã sản phẩm chỉ gồm chữ, số, dấu cách và ký tự . - _');
 
+/**
+ * Mã sản phẩm hiển thị cho người dùng (chỉ hiển thị, KHÔNG dùng để tra cứu dữ liệu).
+ * Cho phép để trống -> hệ thống tự lấy theo mã sản phẩm (productCode).
+ */
+export const productCodeAliasSchema = z
+  .string({ invalid_type_error: 'Mã sản phẩm hiển thị không hợp lệ' })
+  .trim()
+  .max(MAX_PRODUCT_CODE_LENGTH, `Mã sản phẩm hiển thị tối đa ${MAX_PRODUCT_CODE_LENGTH} ký tự`)
+  .refine((value) => value === '' || (value.length >= 2 && PRODUCT_CODE_PATTERN.test(value)), {
+    message:
+      'Mã sản phẩm hiển thị từ 2 ký tự, chỉ gồm chữ, số, dấu cách và ký tự . - _',
+  });
+
+/** Mã sản phẩm khi tạo mới: có thể để trống (hệ thống tự sinh), khi có thì phải hợp lệ. */
+const productCodeInputSchema = z.union([productCodeSchema, z.literal('')]).optional();
+
 export const MAX_DESCRIPTION_WORDS = 500;
 
 const countWords = (value: string) => value.split(/\s+/).filter(Boolean).length;
@@ -134,7 +150,10 @@ export const qrExpiresAtSchema = z
 export const createProductSchema = z.object({
   name: nameSchema,
   slug: slugSchema.optional(),
-  productCode: productCodeSchema,
+  /** Để trống / không gửi -> hệ thống tự sinh mã (SP + ddMMyy + STT). */
+  productCode: productCodeInputSchema,
+  /** Để trống -> lấy theo mã sản phẩm. */
+  productCodeAlias: productCodeAliasSchema.optional(),
   description: descriptionSchema,
   manufacturer: manufacturerSchema,
   specs: specEntriesSchema,
@@ -147,7 +166,10 @@ export const createProductSchema = z.object({
 export const updateProductSchema = z.object({
   name: nameSchema,
   slug: slugSchema,
-  productCode: productCodeSchema,
+  /** Mã sản phẩm không cho phép thay đổi sau khi tạo (route sẽ bỏ qua / báo lỗi). */
+  productCode: productCodeInputSchema,
+  /** Để trống -> lấy theo mã sản phẩm. */
+  productCodeAlias: productCodeAliasSchema.optional(),
   description: descriptionSchema,
   manufacturer: manufacturerSchema,
   specs: specEntriesSchema,

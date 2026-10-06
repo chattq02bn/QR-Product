@@ -63,3 +63,15 @@ export function isValidHttpUrl(value: string): boolean {
     return false;
   }
 }
+
+/**
+ * Mã hiển thị cho người dùng (bảng admin, trang tra cứu, khối thông số):
+ * ưu tiên mã hiển thị (productCodeAlias), không có thì lấy mã sản phẩm.
+ * Mã sản phẩm (productCode) chỉ dùng cho QR / tra cứu dữ liệu.
+ */
+export function getDisplayProductCode(product: {
+  productCodeAlias?: string | null;
+  productCode?: string | null;
+}): string {
+  return product.productCodeAlias?.trim() || product.productCode?.trim() || '';
+}

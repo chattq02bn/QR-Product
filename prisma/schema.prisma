@@ -8,24 +8,28 @@ datasource db {
 }
 
 model Product {
-  id           String         @id @default(cuid())
-  name         String
-  slug         String         @unique
+  id               String         @id @default(cuid())
+  name             String
+  slug             String         @unique
   /// Mã sản phẩm (in trên bao bì / báo giá). Bắt buộc, duy nhất: mỗi mã ứng với đúng 1 QR.
-  productCode  String         @unique
+  /// Tự sinh khi tạo mới (SP + ddMMyy + STT), không cho sửa sau khi tạo.
+  productCode      String         @unique
+  /// Mã sản phẩm hiển thị cho người dùng (chỉ hiển thị, KHÔNG dùng để tra cứu dữ liệu).
+  /// Để trống khi tạo sẽ lấy theo productCode. Duy nhất.
+  productCodeAlias String         @unique
   /// Mô tả sản phẩm, tối đa 500 từ.
-  description  String?        @db.Text
+  description      String?        @db.Text
   /// Nhà sản xuất.
-  manufacturer String?
+  manufacturer     String?
   /// Thông số kỹ thuật (JSON dạng [{ "label": "Tên sản phẩm", "value": "..." }]).
-  specs        Json?
+  specs            Json?
   /// Nhà sản xuất / Đơn vị phân phối (JSON dạng [{ "label": "Tên đơn vị", "value": "..." }]).
-  distributor  Json?
+  distributor      Json?
   /// Thời điểm hết hạn mã QR. null = dùng vĩnh viễn.
-  qrExpiresAt  DateTime?
-  createdAt    DateTime       @default(now())
-  updatedAt    DateTime       @updatedAt
-  images       ProductImage[]
+  qrExpiresAt      DateTime?
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  images           ProductImage[]
 }
 
 model ProductImage {

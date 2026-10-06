@@ -4,6 +4,7 @@ import { fail, handleApiError, isP2002, isP2002On, ok, readJson } from '@/lib/ap
 import { toProductView } from '@/lib/serialize';
 import { generateUniqueSlug, slugify } from '@/lib/slug';
 import { createProductSchema, productListQuerySchema } from '@/lib/validators';
+import { generateProductCode } from '@/lib/product-code';
 import { requireAdmin } from '@/lib/session';
 
 export const dynamic = 'force-dynamic';
@@ -27,6 +28,7 @@ export async function GET(req: NextRequest) {
           OR: [
             { name: { contains: search, mode: 'insensitive' as const } },
             { productCode: { contains: search, mode: 'insensitive' as const } },
+            { productCodeAlias: { contains: search, mode: 'insensitive' as const } },
           ],
         }
       : {};
@@ -60,11 +62,22 @@ export async function POST(req: NextRequest) {
   try {
     const input = createProductSchema.parse(await readJson(req));
 
+    // Mã sản phẩm: không gửi / để trống -> tự sinh "SP + ddMMyy + STT"
+    const productCode = input.productCode?.trim() || (await generateProductCode());
+    // Mã hiển thị: để trống -> lấy theo mã sản phẩm
+    const productCodeAlias = input.productCodeAlias?.trim() || productCode;
+
     const duplicatedCode = await prisma.product.findFirst({
-      where: { productCode: { equals: input.productCode, mode: 'insensitive' } },
+      where: { productCode: { equals: productCode, mode: 'insensitive' } },
       select: { id: true },
     });
     if (duplicatedCode) return fail('Mã sản phẩm đã tồn tại trên hệ thống', 409);
+
+    const duplicatedAlias = await prisma.product.findFirst({
+      where: { productCodeAlias: { equals: productCodeAlias, mode: 'insensitive' } },
+      select: { id: true },
+    });
+    if (duplicatedAlias) return fail('Mã sản phẩm hiển thị đã tồn tại trên hệ thống', 409);
 
     const slug =
       input.slug ??
@@ -78,7 +91,8 @@ export async function POST(req: NextRequest) {
       data: {
         name: input.name,
         slug: slugify(slug) || slug,
-        productCode: input.productCode,
+        productCode,
+        productCodeAlias,
         description: input.description ?? null,
         manufacturer: input.manufacturer ?? null,
         specs: input.specs ?? [],
@@ -106,6 +120,9 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ data: toProductView(product) }, { status: 201 });
   } catch (error) {
+    if (isP2002On(error, 'productCodeAlias')) {
+      return fail('Mã sản phẩm hiển thị đã tồn tại trên hệ thống', 409);
+    }
     if (isP2002On(error, 'productCode')) {
       return fail('Mã sản phẩm đã tồn tại trên hệ thống', 409);
     }

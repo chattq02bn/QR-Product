@@ -45,15 +45,22 @@ export async function PUT(req: NextRequest, { params }: Params) {
       return fail('Mã tra cứu đã tồn tại, vui lòng chọn mã khác', 409);
     }
 
-    const duplicateCode = await prisma.product.findFirst({
+    // Mã sản phẩm không cho phép thay đổi sau khi tạo (chỉ dùng để tra cứu / in QR)
+    if (input.productCode && input.productCode !== existing.productCode) {
+      return fail('Mã sản phẩm không cho phép thay đổi', 409);
+    }
+    // Mã hiển thị: để trống -> lấy theo mã sản phẩm
+    const productCodeAlias = input.productCodeAlias?.trim() || existing.productCode;
+
+    const duplicateAlias = await prisma.product.findFirst({
       where: {
-        productCode: { equals: input.productCode, mode: 'insensitive' },
+        productCodeAlias: { equals: productCodeAlias, mode: 'insensitive' },
         id: { not: existing.id },
       },
       select: { id: true },
     });
-    if (duplicateCode) {
-      return fail('Mã sản phẩm đã tồn tại trên hệ thống', 409);
+    if (duplicateAlias) {
+      return fail('Mã sản phẩm hiển thị đã tồn tại trên hệ thống', 409);
     }
 
     // Ghép 2 danh sách ảnh từ form (ảnh sản phẩm + ảnh hướng dẫn) để so sánh với dữ liệu cũ.
@@ -116,7 +123,8 @@ export async function PUT(req: NextRequest, { params }: Params) {
         data: {
           name: input.name,
           slug: input.slug,
-          productCode: input.productCode,
+          productCode: existing.productCode,
+          productCodeAlias,
           description: input.description === undefined ? existing.description : input.description,
           manufacturer:
             input.manufacturer === undefined ? existing.manufacturer : input.manufacturer,
@@ -148,6 +156,9 @@ export async function PUT(req: NextRequest, { params }: Params) {
 
     return ok(toProductView(product));
   } catch (error) {
+    if (isP2002On(error, 'productCodeAlias')) {
+      return fail('Mã sản phẩm hiển thị đã tồn tại trên hệ thống', 409);
+    }
     if (isP2002On(error, 'productCode')) {
       return fail('Mã sản phẩm đã tồn tại trên hệ thống', 409);
     }
