@@ -69,9 +69,9 @@ type EntryListName = 'specs' | 'distributor';
 
 type FormValues = {
   name: string;
-  /** Mã sản phẩm (tự sinh, không cho sửa) — dùng cho QR / tra cứu dữ liệu. */
+  /** Mã sản phẩm (nhập khi tạo, để trống thì tự sinh) — dùng cho QR / tra cứu dữ liệu. */
   productCode: string;
-  /** Mã sản phẩm hiển thị cho người dùng (chỉ hiển thị, không tra cứu). */
+  /** Mã sản phẩm hiển thị cho người dùng (chỉ hiển thị, không tra cứu; trống = không hiển thị mã). */
   productCodeAlias?: string;
   qrMode: ExpiryMode;
   qrDuration: number;
@@ -511,7 +511,7 @@ export default function ProductModal({ open, product, onClose, onSave }: Props) 
     setExpiryTouched(false);
 
     message.success(
-      `Đã copy thông tin từ mã ${product.productCode} — mã sản phẩm mới sẽ tự sinh khi lưu`,
+      `Đã copy thông tin từ mã ${product.productCode} — để trống sẽ tự sinh mã mới, hoặc nhập mã khác`,
     );
     window.setTimeout(() => {
       form.focusField('productCodeAlias');
@@ -643,9 +643,9 @@ export default function ProductModal({ open, product, onClose, onSave }: Props) 
 
       const payload: ProductPayload = {
         name: values.name.trim(),
-        // Mã sản phẩm: ô bị khóa, để trống khi tạo mới -> server tự sinh (SP + ddMMyy + STT)
+        // Mã sản phẩm: để trống khi tạo mới -> server tự sinh (SP + ddMMyy + STT)
         productCode: values.productCode.trim() || undefined,
-        // Mã hiển thị: để trống -> server lấy theo mã sản phẩm
+        // Mã hiển thị: để trống -> không hiển thị mã sản phẩm trên giao diện
         productCodeAlias: values.productCodeAlias?.trim() ?? '',
         description: values.description?.trim() || null,
         manufacturer: values.manufacturer?.trim() || null,
@@ -929,23 +929,51 @@ export default function ProductModal({ open, product, onClose, onSave }: Props) 
               name="productCode"
               label="Mã sản phẩm"
               required={isEditing}
+              validateTrigger="onBlur"
               extra={
                 isCopy
-                  ? `Đang tạo bản sao từ mã ${copiedFrom} — mã sản phẩm mới sẽ tự sinh khi lưu.`
-                  : isEditing
-                    ? 'Mã dùng cho QR / link tra cứu, cố định và không thể sửa.'
-                    : 'Tự sinh khi tạo sản phẩm theo mẫu SP + ddMMyy + STT, dùng cho QR / tra cứu (không thể sửa).'
+                  ? `Đang tạo bản sao từ mã ${copiedFrom} — để trống sẽ tự sinh mã mới, hoặc nhập mã khác.`
+                  : 'Mã dùng cho QR / link tra cứu. Để trống khi tạo sẽ tự sinh theo mẫu SP + ddMMyy + STT.'
               }
-              rules={isEditing ? [{ required: true, message: 'Thiếu mã sản phẩm' }] : []}
+              rules={[
+                {
+                  validator: async (_, value?: string) => {
+                    const trimmed = (value ?? '').trim();
+                    // Để trống khi tạo mới -> server tự sinh mã
+                    if (!trimmed) {
+                      if (isEditing) throw new Error('Vui lòng nhập mã sản phẩm');
+                      return;
+                    }
+                    if (trimmed.length < 2 || trimmed.length > MAX_PRODUCT_CODE_LENGTH) {
+                      throw new Error(`Mã sản phẩm từ 2 đến ${MAX_PRODUCT_CODE_LENGTH} ký tự`);
+                    }
+                    if (!PRODUCT_CODE_PATTERN.test(trimmed)) {
+                      throw new Error('Mã sản phẩm chỉ gồm chữ, số, dấu cách và ký tự . - _');
+                    }
+                    // Mã không đổi so với ban đầu -> không cần kiểm tra lại (bản sao luôn kiểm tra)
+                    if (!isCopy && trimmed === (product?.productCode ?? '').trim()) return;
+                    if (await isProductCodeTaken(trimmed, isCopy ? undefined : product?.id)) {
+                      throw new Error('Mã sản phẩm đã tồn tại trên hệ thống');
+                    }
+                  },
+                },
+              ]}
             >
-              <Input placeholder="Tự động khi tạo sản phẩm" disabled />
+              <Input
+                placeholder={
+                  isEditing ? 'Nhập mã sản phẩm' : 'Để trống sẽ tự sinh (SP + ddMMyy + STT)'
+                }
+                maxLength={MAX_PRODUCT_CODE_LENGTH}
+                allowClear
+                disabled={saving}
+              />
             </Form.Item>
 
             <Form.Item
               name="productCodeAlias"
               label="Mã sản phẩm hiển thị"
               validateTrigger="onBlur"
-              extra="Hiển thị trên bảng admin và trang tra cứu (chỉ hiển thị, không dùng để tra cứu). Để trống sẽ lấy mã sản phẩm."
+              extra="Hiển thị trên bảng admin và trang tra cứu (chỉ hiển thị, không dùng để tra cứu). Để trống thì không hiển thị mã sản phẩm."
               rules={[
                 {
                   validator: async (_, value?: string) => {
@@ -978,7 +1006,7 @@ export default function ProductModal({ open, product, onClose, onSave }: Props) 
               ]}
             >
               <Input
-                placeholder="Ví dụ: OML-QT26-F51-YM"
+                placeholder="Để trống nếu không hiển thị mã sản phẩm"
                 maxLength={MAX_PRODUCT_CODE_LENGTH}
                 allowClear
                 disabled={saving}

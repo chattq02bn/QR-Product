@@ -26,7 +26,7 @@ import {
 } from '@ant-design/icons';
 import { openInNewTab } from '@/lib/client';
 import { getLookupPath, getLookupUrl, getQrCode } from '@/lib/qr';
-import { EXPIRY_COLORS, describeExpiry, getDisplayProductCode } from '@/lib/format';
+import { EXPIRY_COLORS, describeExpiry } from '@/lib/format';
 import type { ProductView } from '@/lib/types';
 
 type Props = {
@@ -205,10 +205,9 @@ export default function ProductTable({
     },
     {
       title: 'Mã sản phẩm',
-      key: 'productCodeAlias',
+      dataIndex: 'productCode',
+      key: 'productCode',
       width: 140,
-      // Hiển thị mã hiển thị (productCodeAlias), thiếu thì lấy mã sản phẩm
-      render: (_, product) => getDisplayProductCode(product),
     },
     {
       title: 'Ảnh sản phẩm',
@@ -319,7 +318,7 @@ export default function ProductTable({
           >
             <div>
               <Typography.Text type="secondary">Mã sản phẩm: </Typography.Text>
-              <Typography.Text code>{getDisplayProductCode(product)}</Typography.Text>
+              <Typography.Text code>{product.productCode ?? "---"}</Typography.Text>
             </div>
 
             <div>

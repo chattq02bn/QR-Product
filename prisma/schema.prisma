@@ -11,12 +11,12 @@ model Product {
   id               String         @id @default(cuid())
   name             String
   slug             String         @unique
-  /// Mã sản phẩm (in trên bao bì / báo giá). Bắt buộc, duy nhất: mỗi mã ứng với đúng 1 QR.
-  /// Tự sinh khi tạo mới (SP + ddMMyy + STT), không cho sửa sau khi tạo.
+  /// Mã sản phẩm (in trên bao bì / báo giá). Duy nhất: mỗi mã ứng với đúng 1 QR.
+  /// Nhập khi tạo (để trống thì tự sinh SP + ddMMyy + STT), được phép sửa về sau.
   productCode      String         @unique
   /// Mã sản phẩm hiển thị cho người dùng (chỉ hiển thị, KHÔNG dùng để tra cứu dữ liệu).
-  /// Để trống khi tạo sẽ lấy theo productCode. Duy nhất.
-  productCodeAlias String         @unique
+  /// Cho phép để trống: null = trang giao diện không hiển thị mã sản phẩm. Duy nhất.
+  productCodeAlias String?        @unique
   /// Mô tả sản phẩm, tối đa 500 từ.
   description      String?        @db.Text
   /// Nhà sản xuất.

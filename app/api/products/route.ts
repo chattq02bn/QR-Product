@@ -64,8 +64,8 @@ export async function POST(req: NextRequest) {
 
     // Mã sản phẩm: không gửi / để trống -> tự sinh "SP + ddMMyy + STT"
     const productCode = input.productCode?.trim() || (await generateProductCode());
-    // Mã hiển thị: để trống -> lấy theo mã sản phẩm
-    const productCodeAlias = input.productCodeAlias?.trim() || productCode;
+    // Mã hiển thị: cho phép để trống -> trang giao diện không hiển thị mã sản phẩm
+    const productCodeAlias = input.productCodeAlias?.trim() || null;
 
     const duplicatedCode = await prisma.product.findFirst({
       where: { productCode: { equals: productCode, mode: 'insensitive' } },
@@ -73,11 +73,13 @@ export async function POST(req: NextRequest) {
     });
     if (duplicatedCode) return fail('Mã sản phẩm đã tồn tại trên hệ thống', 409);
 
-    const duplicatedAlias = await prisma.product.findFirst({
-      where: { productCodeAlias: { equals: productCodeAlias, mode: 'insensitive' } },
-      select: { id: true },
-    });
-    if (duplicatedAlias) return fail('Mã sản phẩm hiển thị đã tồn tại trên hệ thống', 409);
+    if (productCodeAlias) {
+      const duplicatedAlias = await prisma.product.findFirst({
+        where: { productCodeAlias: { equals: productCodeAlias, mode: 'insensitive' } },
+        select: { id: true },
+      });
+      if (duplicatedAlias) return fail('Mã sản phẩm hiển thị đã tồn tại trên hệ thống', 409);
+    }
 
     const slug =
       input.slug ??

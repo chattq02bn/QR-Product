@@ -54,7 +54,7 @@ export const productCodeSchema = z
 
 /**
  * Mã sản phẩm hiển thị cho người dùng (chỉ hiển thị, KHÔNG dùng để tra cứu dữ liệu).
- * Cho phép để trống -> hệ thống tự lấy theo mã sản phẩm (productCode).
+ * Cho phép để trống: không nhập thì trang giao diện không hiển thị mã sản phẩm.
  */
 export const productCodeAliasSchema = z
   .string({ invalid_type_error: 'Mã sản phẩm hiển thị không hợp lệ' })

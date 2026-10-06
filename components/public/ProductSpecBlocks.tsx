@@ -22,8 +22,9 @@ function normalizeLabel(label?: string): string {
 }
 
 /**
- * Chèn dòng "Mã sản phẩm" (mã hiển thị: productCodeAlias, thiếu thì lấy productCode)
- * vào danh sách thông số. Không chèn trùng khi dữ liệu đã sẵn dòng "Mã sản phẩm".
+ * Chèn dòng "Mã sản phẩm" (lấy mã hiển thị productCodeAlias) vào danh sách thông số.
+ * Không chèn khi mã hiển thị trống (không hiển thị mã sản phẩm) và không chèn trùng
+ * khi dữ liệu đã sẵn dòng "Mã sản phẩm".
  */
 function withProductCode(entries: SpecEntry[] | null, productCode: string): SpecEntry[] {
   const rows = Array.isArray(entries) ? entries.map((entry) => ({ ...entry })) : [];

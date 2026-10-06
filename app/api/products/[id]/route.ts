@@ -45,22 +45,34 @@ export async function PUT(req: NextRequest, { params }: Params) {
       return fail('Mã tra cứu đã tồn tại, vui lòng chọn mã khác', 409);
     }
 
-    // Mã sản phẩm không cho phép thay đổi sau khi tạo (chỉ dùng để tra cứu / in QR)
-    if (input.productCode && input.productCode !== existing.productCode) {
-      return fail('Mã sản phẩm không cho phép thay đổi', 409);
+    // Mã sản phẩm được phép sửa; để trống -> giữ nguyên mã hiện tại (mã QR / tra cứu)
+    const productCode = input.productCode?.trim() || existing.productCode;
+    if (productCode !== existing.productCode) {
+      const duplicateCode = await prisma.product.findFirst({
+        where: {
+          productCode: { equals: productCode, mode: 'insensitive' },
+          id: { not: existing.id },
+        },
+        select: { id: true },
+      });
+      if (duplicateCode) {
+        return fail('Mã sản phẩm đã tồn tại trên hệ thống', 409);
+      }
     }
-    // Mã hiển thị: để trống -> lấy theo mã sản phẩm
-    const productCodeAlias = input.productCodeAlias?.trim() || existing.productCode;
 
-    const duplicateAlias = await prisma.product.findFirst({
-      where: {
-        productCodeAlias: { equals: productCodeAlias, mode: 'insensitive' },
-        id: { not: existing.id },
-      },
-      select: { id: true },
-    });
-    if (duplicateAlias) {
-      return fail('Mã sản phẩm hiển thị đã tồn tại trên hệ thống', 409);
+    // Mã hiển thị: cho phép để trống -> trang giao diện không hiển thị mã sản phẩm
+    const productCodeAlias = input.productCodeAlias?.trim() || null;
+    if (productCodeAlias) {
+      const duplicateAlias = await prisma.product.findFirst({
+        where: {
+          productCodeAlias: { equals: productCodeAlias, mode: 'insensitive' },
+          id: { not: existing.id },
+        },
+        select: { id: true },
+      });
+      if (duplicateAlias) {
+        return fail('Mã sản phẩm hiển thị đã tồn tại trên hệ thống', 409);
+      }
     }
 
     // Ghép 2 danh sách ảnh từ form (ảnh sản phẩm + ảnh hướng dẫn) để so sánh với dữ liệu cũ.
@@ -123,7 +135,7 @@ export async function PUT(req: NextRequest, { params }: Params) {
         data: {
           name: input.name,
           slug: input.slug,
-          productCode: existing.productCode,
+          productCode,
           productCodeAlias,
           description: input.description === undefined ? existing.description : input.description,
           manufacturer:
